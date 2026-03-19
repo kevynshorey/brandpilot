@@ -10,6 +10,7 @@ import {
   Check,
   ArrowLeft,
   BookOpen,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { BlogData, ScrapedArticle, Step } from './types';
@@ -57,6 +58,21 @@ export function BlogCreateWizard({
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-xs text-zinc-400">
+        <button onClick={onBack} className="hover:text-zinc-600 transition-colors">
+          Blog
+        </button>
+        <ChevronRight className="w-3 h-3" />
+        <span className="text-zinc-700 font-medium">
+          {isEdit ? 'Edit Post' : 'Create New Post'}
+        </span>
+        <ChevronRight className="w-3 h-3" />
+        <span className="text-amber-600 font-medium">
+          {steps.find(s => s.num === step)?.label || 'Step ' + step}
+        </span>
+      </nav>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

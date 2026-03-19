@@ -10,7 +10,10 @@ import {
   Trash2,
   FileText,
   Image,
-  ExternalLink,
+  X,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ScrapedArticle } from './types';
@@ -33,6 +36,7 @@ export function ResearchStep({
   const [urlInput, setUrlInput] = useState('');
   const [urls, setUrls] = useState<string[]>([]);
   const [researchLoading, setResearchLoading] = useState(false);
+  const [expandedArticle, setExpandedArticle] = useState<number | null>(null);
   const researchUrls = useResearchUrls();
 
   const addUrl = () => {
@@ -58,6 +62,14 @@ export function ResearchStep({
 
   const removeUrl = (url: string) => {
     setUrls(prev => prev.filter(u => u !== url));
+  };
+
+  const getDomain = (url: string) => {
+    try {
+      return new URL(url).hostname.replace('www.', '');
+    } catch {
+      return url;
+    }
   };
 
   const handleResearch = async () => {
@@ -110,97 +122,160 @@ export function ResearchStep({
       </div>
 
       {/* URL input */}
-      <div className="mb-4">
+      <div className="mb-3">
         <label className="text-xs font-medium text-zinc-600 mb-1.5 block">
-          Source URLs (up to 5)
+          Source URLs <span className="text-zinc-400">({urls.length}/5)</span>
         </label>
         <div className="flex gap-2">
           <input
             value={urlInput}
             onChange={e => setUrlInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addUrl()}
-            placeholder="https://example.com/article"
+            placeholder="Paste a URL and press Enter"
             className="flex-1 px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30"
           />
           <button
             onClick={addUrl}
             disabled={urls.length >= 5}
-            className="px-4 py-2.5 border border-zinc-200 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            className="px-3 py-2.5 border border-zinc-200 text-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors disabled:opacity-50"
+            title="Add URL"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Add URL
+            <Plus className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* URL list */}
+      {/* URL chips */}
       {urls.length > 0 && (
-        <div className="mb-4 space-y-2">
+        <div className="flex flex-wrap gap-2 mb-4">
           {urls.map(url => (
-            <div key={url} className="flex items-center justify-between px-3 py-2 bg-zinc-50 rounded-lg border border-zinc-100">
-              <div className="flex items-center gap-2 min-w-0">
-                <ExternalLink className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                <span className="text-xs text-zinc-600 truncate">{url}</span>
-              </div>
-              <button onClick={() => removeUrl(url)} className="p-1 text-zinc-400 hover:text-red-500 shrink-0">
-                <Trash2 className="w-3 h-3" />
+            <span
+              key={url}
+              className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 bg-zinc-100 border border-zinc-200 rounded-full text-xs text-zinc-700 max-w-[260px] group hover:border-zinc-300 transition-colors"
+            >
+              <span className="truncate">{getDomain(url)}</span>
+              <button
+                onClick={() => removeUrl(url)}
+                className="p-0.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+              >
+                <X className="w-3 h-3" />
               </button>
-            </div>
+            </span>
           ))}
         </div>
       )}
 
       {/* Research button */}
-      {urls.length > 0 && (
+      {urls.length > 0 && articles.length === 0 && (
         <button
           onClick={handleResearch}
           disabled={researchLoading}
           className="w-full py-3 bg-zinc-900 text-white rounded-xl font-semibold text-sm hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mb-4"
         >
-          {researchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          {researchLoading ? 'Researching...' : `Research ${urls.length} URL${urls.length > 1 ? 's' : ''}`}
+          {researchLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Scraping {urls.length} source{urls.length > 1 ? 's' : ''}...</span>
+            </>
+          ) : (
+            <>
+              <Search className="w-4 h-4" />
+              <span>Research {urls.length} Source{urls.length > 1 ? 's' : ''}</span>
+            </>
+          )}
         </button>
       )}
 
-      {/* Scraped articles */}
+      {/* Scraped articles — collapsible */}
       {articles.length > 0 && (
-        <div className="space-y-3 mt-4">
-          <p className="text-xs font-medium text-zinc-600 uppercase tracking-wider">
-            Scraped Articles ({articles.filter(a => a.selected).length} selected)
-          </p>
-          {articles.map((article, idx) => (
-            <div key={idx} className={cn(
-              'border rounded-lg p-3 transition-colors',
-              article.selected ? 'border-amber-200 bg-amber-50/30' : 'border-zinc-200 bg-white'
-            )}>
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={article.selected}
-                  onChange={() => toggleArticle(idx)}
-                  className="mt-1 w-4 h-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-400"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-900 truncate">{article.title || article.url}</p>
-                  {article.description && (
-                    <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{article.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-2 text-xs text-zinc-400">
-                    <span className="flex items-center gap-1">
-                      <FileText className="w-3 h-3" />
-                      {article.content ? `${article.content.split(' ').length} words` : 'No content'}
-                    </span>
-                    {article.images?.length > 0 && (
+        <div className="space-y-2 mt-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-zinc-600 uppercase tracking-wider flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+              {articles.filter(a => a.selected).length} of {articles.length} sources selected
+            </p>
+            <button
+              onClick={handleResearch}
+              disabled={researchLoading}
+              className="text-xs text-zinc-400 hover:text-zinc-600 flex items-center gap-1 transition-colors"
+            >
+              {researchLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+              Re-scrape
+            </button>
+          </div>
+
+          {articles.map((article, idx) => {
+            const isExpanded = expandedArticle === idx;
+            return (
+              <div key={idx} className={cn(
+                'border rounded-lg transition-colors overflow-hidden',
+                article.selected ? 'border-amber-200 bg-amber-50/30' : 'border-zinc-200 bg-white'
+              )}>
+                {/* Header row */}
+                <div className="flex items-center gap-3 p-3">
+                  <input
+                    type="checkbox"
+                    checked={article.selected}
+                    onChange={() => toggleArticle(idx)}
+                    className="w-4 h-4 rounded border-zinc-300 text-amber-500 focus:ring-amber-400"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900 truncate">{article.title || article.url}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
                       <span className="flex items-center gap-1">
-                        <Image className="w-3 h-3" />
-                        {article.images.length} images
+                        <FileText className="w-3 h-3" />
+                        {article.content ? `${article.content.split(' ').length} words` : 'No content'}
                       </span>
+                      {article.images?.length > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Image className="w-3 h-3" />
+                          {article.images.length} images
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setExpandedArticle(isExpanded ? null : idx)}
+                    className="p-1 text-zinc-400 hover:text-zinc-600 rounded transition-colors"
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Collapsible content */}
+                {isExpanded && (
+                  <div className="px-3 pb-3 pt-0 border-t border-zinc-100">
+                    {article.description && (
+                      <p className="text-xs text-zinc-500 mt-2 mb-2">{article.description}</p>
+                    )}
+                    {article.content && (
+                      <div className="bg-zinc-50 rounded-lg p-3 mt-2 max-h-[200px] overflow-y-auto">
+                        <p className="text-xs text-zinc-600 leading-relaxed whitespace-pre-line">
+                          {article.content.slice(0, 1000)}
+                          {article.content.length > 1000 && '...'}
+                        </p>
+                      </div>
+                    )}
+                    {article.images?.length > 0 && (
+                      <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                        {article.images.slice(0, 6).map((img, imgIdx) => (
+                          <div key={imgIdx} className="w-16 h-16 rounded border border-zinc-200 overflow-hidden shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={img.url}
+                              alt={img.alt || ''}
+                              className="w-full h-full object-cover"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
