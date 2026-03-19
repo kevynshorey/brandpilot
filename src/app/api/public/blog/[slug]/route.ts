@@ -77,8 +77,33 @@ export async function GET(
     );
   }
 
+  // Build JSON-LD structured data for consuming sites
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: data.title,
+    description: data.meta_description || data.excerpt || '',
+    image: data.featured_image_url || undefined,
+    datePublished: data.published_at,
+    url: `https://${workspaceSlug}.brandpilot.app/blog/${data.slug}`,
+    publisher: {
+      '@type': 'Organization',
+      name: workspaceSlug,
+    },
+    keywords: (data.tags || []).join(', '),
+  };
+
+  // OG metadata for consuming sites to embed
+  const seo = {
+    og_title: data.title,
+    og_description: data.meta_description || data.excerpt || '',
+    og_image: data.featured_image_url || null,
+    canonical_url: `https://${workspaceSlug}.brandpilot.app/blog/${data.slug}`,
+    json_ld: jsonLd,
+  };
+
   return NextResponse.json(
-    { post: data },
+    { post: data, seo },
     { headers: CORS_HEADERS },
   );
 }

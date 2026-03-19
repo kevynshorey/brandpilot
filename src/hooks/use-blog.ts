@@ -97,6 +97,7 @@ export function useUpdateBlogPost() {
 
 export function usePublishBlogPost() {
   const queryClient = useQueryClient();
+  const { activeWorkspace } = useWorkspaceStore();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -111,7 +112,22 @@ export function usePublishBlogPost() {
       }
       return (await res.json()).post;
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['blog-posts', activeWorkspace?.id] });
+      const previous = queryClient.getQueryData(['blog-posts', activeWorkspace?.id]);
+      queryClient.setQueryData(
+        ['blog-posts', activeWorkspace?.id],
+        (old: Record<string, unknown>[] | undefined) =>
+          old?.map(p => (p.id as string) === id ? { ...p, status: 'published', published_at: new Date().toISOString() } : p),
+      );
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['blog-posts', activeWorkspace?.id], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
     },
   });
@@ -119,13 +135,29 @@ export function usePublishBlogPost() {
 
 export function useDeleteBlogPost() {
   const queryClient = useQueryClient();
+  const { activeWorkspace } = useWorkspaceStore();
 
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/blog/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete blog post');
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['blog-posts', activeWorkspace?.id] });
+      const previous = queryClient.getQueryData(['blog-posts', activeWorkspace?.id]);
+      queryClient.setQueryData(
+        ['blog-posts', activeWorkspace?.id],
+        (old: Record<string, unknown>[] | undefined) =>
+          old?.filter(p => (p.id as string) !== id),
+      );
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['blog-posts', activeWorkspace?.id], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
     },
   });
