@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createRateLimiter } from '@/lib/rate-limit';
 import { uniqueSlug } from '@/lib/slugify';
-import { checkPlanLimit, getOrgIdFromWorkspace } from '@/lib/plan-limits';
+import { checkPlanLimit } from '@/lib/plan-limits';
+import { authorizeForWorkspace } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(20, 60_000);
 
@@ -17,18 +18,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspace_id');
   if (!workspaceId) {
     return NextResponse.json({ error: 'workspace_id is required' }, { status: 400 });
   }
 
+  // Auth + ownership check
+  const auth = await authorizeForWorkspace(workspaceId);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const supabase = await createClient();
   const status = searchParams.get('status');
   const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')));
@@ -64,12 +66,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
     const body = await request.json();
     const workspaceId = body.workspace_id;
@@ -77,22 +73,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'workspace_id is required' }, { status: 400 });
     }
 
+    // Auth + ownership check
+    const auth = await authorizeForWorkspace(workspaceId);
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Enforce plan limit
-    const orgId = await getOrgIdFromWorkspace(workspaceId);
-    if (orgId) {
-      const limit = await checkPlanLimit(orgId, 'blog_posts');
-      if (!limit.allowed) {
-        return NextResponse.json(
-          { error: `Blog post limit reached (${limit.used}/${limit.limit}). Upgrade your plan to continue.` },
-          { status: 403 },
-        );
-      }
+    const limit = await checkPlanLimit(auth.orgId, 'blog_posts');
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: `Blog post limit reached (${limit.used}/${limit.limit}). Upgrade your plan to continue.` },
+        { status: 403 },
+      );
     }
 
     const title = sanitize(String(body.title || ''), 500);
     if (!title) {
       return NextResponse.json({ error: 'title is required' }, { status: 400 });
     }
+
+    const supabase = await createClient();
 
     // Generate unique slug
     const { data: existing } = await supabase
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       .from('blog_posts')
       .insert({
         workspace_id: workspaceId,
-        created_by: user.id,
+        created_by: auth.user.userId,
         title,
         slug,
         content: sanitize(String(body.content || ''), 50000),

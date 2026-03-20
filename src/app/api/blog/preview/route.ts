@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createRateLimiter } from '@/lib/rate-limit';
 import { generatePreviewToken } from '@/lib/preview-token';
+import { authorizeForWorkspace } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(20, 60_000);
 
@@ -12,19 +13,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const body = await request.json();
   const { postId } = body as { postId: string };
   if (!postId) {
     return NextResponse.json({ error: 'postId is required' }, { status: 400 });
   }
 
-  // Verify the post exists and user has access
+  // Fetch the post to get its workspace_id
+  const supabase = await createClient();
   const { data: post } = await supabase
     .from('blog_posts')
     .select('id, slug, workspace_id')
@@ -33,6 +29,12 @@ export async function POST(request: NextRequest) {
 
   if (!post) {
     return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+  }
+
+  // Verify user owns this workspace
+  const auth = await authorizeForWorkspace(post.workspace_id);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // Get workspace slug for the URL

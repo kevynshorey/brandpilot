@@ -77,3 +77,34 @@ export async function authorizeForOrg(orgId: string): Promise<AuthResult | null>
 
   return user;
 }
+
+/**
+ * Verify the authenticated user has access to a workspace.
+ * Resolves workspace → org, then checks org membership.
+ * Returns { user, orgId } if authorized, null otherwise.
+ */
+export async function authorizeForWorkspace(
+  workspaceId: string,
+): Promise<{ user: AuthResult; orgId: string } | null> {
+  const user = await getAuthUser();
+  if (!user) return null;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return null;
+
+  const supabase = createServiceClient(supabaseUrl, serviceRoleKey);
+
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('org_id')
+    .eq('id', workspaceId)
+    .single();
+
+  if (!workspace?.org_id) return null;
+
+  const isMember = await verifyOrgMembership(user.userId, workspace.org_id);
+  if (!isMember) return null;
+
+  return { user, orgId: workspace.org_id };
+}

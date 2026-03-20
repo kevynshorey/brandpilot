@@ -1,11 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createRateLimiter } from '@/lib/rate-limit';
+import { authorizeForWorkspace } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(20, 60_000);
 
 function sanitize(text: string, maxLen = 2000): string {
   return text.replace(/<[^>]*>/g, '').replace(/\0/g, '').slice(0, maxLen).trim();
+}
+
+/**
+ * Fetch a blog post by ID and verify the authenticated user
+ * has access to its workspace. Returns null if unauthorized.
+ */
+async function getAuthorizedPost(postId: string) {
+  const supabase = await createClient();
+  const { data: post } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('id', postId)
+    .single();
+
+  if (!post) return null;
+
+  const auth = await authorizeForWorkspace(post.workspace_id);
+  if (!auth) return null;
+
+  return { post, auth };
 }
 
 // GET /api/blog/[id]
@@ -18,24 +39,14 @@ export async function GET(
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { id } = await params;
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const result = await getAuthorizedPost(id);
 
-  if (error || !data) {
+  if (!result) {
     return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ post: data });
+  return NextResponse.json({ post: result.post });
 }
 
 // PATCH /api/blog/[id] — update fields, change status
@@ -48,13 +59,12 @@ export async function PATCH(
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const { id } = await params;
+  const result = await getAuthorizedPost(id);
+
+  if (!result) {
+    return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
+  }
 
   try {
     const body = await request.json();
@@ -85,6 +95,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from('blog_posts')
       .update(updates)
@@ -114,13 +125,14 @@ export async function DELETE(
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id } = await params;
+  const result = await getAuthorizedPost(id);
+
+  if (!result) {
+    return NextResponse.json({ error: 'Blog post not found' }, { status: 404 });
   }
 
-  const { id } = await params;
+  const supabase = await createClient();
   const { error } = await supabase
     .from('blog_posts')
     .delete()

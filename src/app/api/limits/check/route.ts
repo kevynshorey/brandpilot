@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRateLimiter } from '@/lib/rate-limit';
 import { checkPlanLimit, getOrgIdFromWorkspace, type LimitType } from '@/lib/plan-limits';
+import { authorizeForWorkspace } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(30, 60_000);
 
@@ -24,11 +25,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const orgId = await getOrgIdFromWorkspace(workspaceId);
-  if (!orgId) {
-    return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+  // Auth + ownership check
+  const auth = await authorizeForWorkspace(workspaceId);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const result = await checkPlanLimit(orgId, limitType);
+  const result = await checkPlanLimit(auth.orgId, limitType);
   return NextResponse.json(result);
 }
