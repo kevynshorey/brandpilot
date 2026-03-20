@@ -166,7 +166,13 @@ Make it genuinely viral-worthy — the kind of post that gets 10K shares, bookma
     rawJson = rawJson.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
   }
 
-  const result = JSON.parse(rawJson);
+  let result;
+  try {
+    result = JSON.parse(rawJson);
+  } catch {
+    console.error('[ai/blog] Failed to parse Claude response as JSON');
+    return NextResponse.json({ error: 'AI returned malformed response' }, { status: 502 });
+  }
 
   // Log to ai_generations (best-effort, don't fail the request)
   try {
@@ -267,6 +273,12 @@ Make the Instagram post irresistible — people should NEED to read the full blo
     return NextResponse.json({ error: 'Empty response from AI' }, { status: 502 });
   }
 
-  const igResult = JSON.parse(rawContent);
+  let igResult;
+  try {
+    igResult = JSON.parse(rawContent);
+  } catch {
+    console.error('[ai/blog] Failed to parse IG preview response as JSON');
+    return NextResponse.json({ error: 'AI returned malformed IG preview' }, { status: 502 });
+  }
   return NextResponse.json({ igPreview: igResult, model: 'gpt-4o' });
 }

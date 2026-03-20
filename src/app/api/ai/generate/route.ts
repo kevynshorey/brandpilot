@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRateLimiter } from '@/lib/rate-limit';
 
-// Rate limiting (simple in-memory, per-IP)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10; // 10 requests per minute
-const RATE_WINDOW = 60_000;
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
+const checkRateLimit = createRateLimiter(10, 60_000, 'ai-generate');
 
 // Input sanitization
 function sanitize(text: string, maxLen = 2000): string {
@@ -97,7 +83,13 @@ async function generateCaption(topic: string, brandVoice: string, platform?: str
   }
 
   const data = await res.json();
-  const result = JSON.parse(data.choices[0].message.content);
+  let result;
+  try {
+    result = JSON.parse(data.choices[0].message.content);
+  } catch {
+    console.error('[ai/generate] Failed to parse AI response as JSON');
+    return NextResponse.json({ error: 'AI returned malformed response' }, { status: 502 });
+  }
 
   return NextResponse.json({
     caption: result.caption,

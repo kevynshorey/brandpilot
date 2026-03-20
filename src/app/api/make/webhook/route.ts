@@ -18,13 +18,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
-  // Verify Make.com webhook secret (if configured)
+  // Verify Make.com webhook secret
   const webhookSecret = process.env.MAKE_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const signature = request.headers.get('x-make-signature') || request.headers.get('authorization');
-    if (signature !== `Bearer ${webhookSecret}` && signature !== webhookSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!webhookSecret) {
+    console.error('[make/webhook] MAKE_WEBHOOK_SECRET not configured — rejecting request');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+  }
+
+  const signature = request.headers.get('x-make-signature') || request.headers.get('authorization');
+  if (signature !== `Bearer ${webhookSecret}` && signature !== webhookSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -63,33 +66,42 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: true, message: 'No posts due for publishing', published: 0 });
         }
 
-        // Publish each post via the internal publish endpoint
-        const results: Array<{ post_id: string; success: boolean; error?: string }> = [];
+        // Publish posts in parallel (capped at 5 concurrent)
         const baseUrl = request.headers.get('host') || 'localhost:3000';
         const protocol = request.headers.get('x-forwarded-proto') || 'http';
 
-        for (const post of posts) {
+        const publishOne = async (post: { id: string }): Promise<{ post_id: string; success: boolean; error?: string }> => {
           try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 30_000);
+
             const publishRes = await fetch(`${protocol}://${baseUrl}/api/social/publish`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ post_id: post.id }),
+              signal: controller.signal,
             });
 
+            clearTimeout(timeout);
+
             if (publishRes.ok) {
-              results.push({ post_id: post.id, success: true });
-            } else {
-              const err = await publishRes.json().catch(() => ({}));
-              results.push({ post_id: post.id, success: false, error: err.error || 'Publish failed' });
+              return { post_id: post.id, success: true };
             }
+            const err = await publishRes.json().catch(() => ({}));
+            return { post_id: post.id, success: false, error: err.error || 'Publish failed' };
           } catch (err) {
-            results.push({
+            return {
               post_id: post.id,
               success: false,
               error: err instanceof Error ? err.message : 'Publish error',
-            });
+            };
           }
-        }
+        };
+
+        const settled = await Promise.allSettled(posts.map(publishOne));
+        const results = settled.map((r) =>
+          r.status === 'fulfilled' ? r.value : { post_id: 'unknown', success: false, error: 'Promise rejected' },
+        );
 
         const published = results.filter(r => r.success).length;
         return NextResponse.json({

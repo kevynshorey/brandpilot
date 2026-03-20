@@ -1,32 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAllowedUrl, scrapeUrl } from '@/lib/scraper';
+import { createRateLimiter } from '@/lib/rate-limit';
 
-// --- Rate limiting (in-memory, per-IP, sliding window) ---
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 5;       // 5 requests per minute
-const RATE_WINDOW = 60_000; // 1 minute
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
-
-// Lazy cleanup: prune stale entries when map grows large
-function pruneStaleEntries() {
-  if (rateLimitMap.size < 100) return;
-  const now = Date.now();
-  for (const [key, val] of rateLimitMap) {
-    if (now > val.resetAt) rateLimitMap.delete(key);
-  }
-}
+const checkRateLimit = createRateLimiter(5, 60_000, 'scrape');
 
 // --- Input sanitization ---
 
@@ -47,8 +23,6 @@ function sanitizeUrl(raw: unknown): string | null {
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-
-  pruneStaleEntries();
 
   if (!(await checkRateLimit(ip))) {
     return NextResponse.json(

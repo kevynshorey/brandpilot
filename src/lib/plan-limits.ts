@@ -112,14 +112,21 @@ export async function checkPlanLimit(
 export async function getOrgIdFromWorkspace(workspaceId: string): Promise<string | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRoleKey) return null;
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Server configuration error: missing Supabase env vars');
+  }
 
   const supabase = createServiceClient(supabaseUrl, serviceRoleKey);
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('workspaces')
     .select('organization_id')
     .eq('id', workspaceId)
     .single();
+
+  if (error) {
+    console.error('[plan-limits] Failed to resolve org from workspace:', error);
+    return null;
+  }
 
   return data?.organization_id ?? null;
 }

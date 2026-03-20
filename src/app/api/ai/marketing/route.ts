@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRateLimiter } from '@/lib/rate-limit';
 
-// ---------------------------------------------------------------------------
-// Rate limiting (in-memory, per-IP, sliding window)
-// ---------------------------------------------------------------------------
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
-const RATE_WINDOW = 60_000;
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
+const checkRateLimit = createRateLimiter(10, 60_000, 'ai-marketing');
 
 // ---------------------------------------------------------------------------
 // Input sanitization
@@ -490,7 +474,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = JSON.parse(rawContent);
+    let result;
+    try {
+      result = JSON.parse(rawContent);
+    } catch {
+      console.error('[ai/marketing] Failed to parse AI response as JSON');
+      return NextResponse.json({ error: 'AI returned malformed response' }, { status: 502 });
+    }
 
     return NextResponse.json({
       content: result,

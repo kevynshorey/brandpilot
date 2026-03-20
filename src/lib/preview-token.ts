@@ -1,6 +1,12 @@
 import { createHmac } from 'crypto';
 
-const PREVIEW_SECRET = process.env.PREVIEW_TOKEN_SECRET || 'brandpilot-preview-default';
+function getPreviewSecret(): string {
+  const secret = process.env.PREVIEW_TOKEN_SECRET;
+  if (!secret) {
+    throw new Error('PREVIEW_TOKEN_SECRET environment variable is required');
+  }
+  return secret;
+}
 const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 /**
@@ -10,7 +16,7 @@ const EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 export function generatePreviewToken(postId: string): string {
   const expiresAt = Date.now() + EXPIRY_MS;
   const payload = `${postId}.${expiresAt}`;
-  const signature = createHmac('sha256', PREVIEW_SECRET)
+  const signature = createHmac('sha256', getPreviewSecret())
     .update(payload)
     .digest('hex')
     .slice(0, 16); // short signature is fine for preview URLs
@@ -32,7 +38,7 @@ export function verifyPreviewToken(token: string): string | null {
 
   // Verify signature
   const payload = `${postId}.${expiresAtStr}`;
-  const expected = createHmac('sha256', PREVIEW_SECRET)
+  const expected = createHmac('sha256', getPreviewSecret())
     .update(payload)
     .digest('hex')
     .slice(0, 16);

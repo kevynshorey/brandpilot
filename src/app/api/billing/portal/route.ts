@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { stripe } from '@/lib/stripe';
 import { createRateLimiter } from '@/lib/rate-limit';
+import { authorizeForOrg } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(5, 60_000);
 
@@ -23,15 +24,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'orgId is required' }, { status: 400 });
   }
 
+  // Auth: verify requesting user belongs to this org
+  const user = await authorizeForOrg(orgId);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const supabase = createServiceClient(supabaseUrl, serviceRoleKey);
 
-  const { data: org } = await supabase
+  const { data: org, error: orgError } = await supabase
     .from('organizations')
     .select('stripe_customer_id')
     .eq('id', orgId)
     .single();
 
-  if (!org?.stripe_customer_id) {
+  if (orgError || !org?.stripe_customer_id) {
     return NextResponse.json({ error: 'No billing account found' }, { status: 404 });
   }
 

@@ -3,6 +3,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { stripe } from '@/lib/stripe';
 import { createRateLimiter } from '@/lib/rate-limit';
 import { PLANS, type PlanId } from '@/lib/billing-plans';
+import { authorizeForOrg } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(5, 60_000);
 
@@ -30,6 +31,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
+  // Auth: verify requesting user belongs to this org
+  const user = await authorizeForOrg(orgId);
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const plan = PLANS[planId];
   if (!plan || plan.id === 'free') {
     return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
@@ -43,13 +50,13 @@ export async function POST(request: NextRequest) {
   const supabase = createServiceClient(supabaseUrl, serviceRoleKey);
 
   // Fetch org to get or create Stripe customer
-  const { data: org } = await supabase
+  const { data: org, error: orgError } = await supabase
     .from('organizations')
     .select('id, name, stripe_customer_id, owner_id')
     .eq('id', orgId)
     .single();
 
-  if (!org) {
+  if (orgError || !org) {
     return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
   }
 
@@ -71,10 +78,14 @@ export async function POST(request: NextRequest) {
     });
     customerId = customer.id;
 
-    await supabase
+    const { error: updateError } = await supabase
       .from('organizations')
       .update({ stripe_customer_id: customerId })
       .eq('id', org.id);
+
+    if (updateError) {
+      console.error('[checkout] Failed to save Stripe customer ID:', updateError);
+    }
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

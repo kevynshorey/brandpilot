@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createRateLimiter } from '@/lib/rate-limit';
+import { getAuthUser, verifyOrgMembership } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(10, 60_000);
 
@@ -17,6 +18,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
+  // Auth: verify user is logged in
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { post_id } = body;
@@ -30,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Fetch the post
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('*, post_media(*)')
+      .select('*, workspace:workspaces!inner(organization_id), post_media(*)')
       .eq('id', post_id)
       .single();
 
@@ -38,15 +45,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
+    // Verify user has access to this post's org
+    const orgId = (post.workspace as { organization_id: string })?.organization_id;
+    if (orgId) {
+      const hasAccess = await verifyOrgMembership(user.userId, orgId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+    }
+
     if (post.status === 'published') {
       return NextResponse.json({ error: 'Post is already published' }, { status: 400 });
     }
 
     // Mark as publishing
-    await supabase
+    const { error: updateError } = await supabase
       .from('posts')
       .update({ status: 'publishing' })
       .eq('id', post_id);
+
+    if (updateError) {
+      console.error('[publish] Failed to mark post as publishing:', updateError);
+    }
 
     const platforms = (post.target_platforms as string[]) || [];
     const results: Record<string, { success: boolean; platform_post_id?: string; error?: string }> = {};
@@ -135,7 +155,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update post status
-    await supabase
+    const { error: statusError } = await supabase
       .from('posts')
       .update({
         status: finalStatus,
@@ -143,6 +163,10 @@ export async function POST(request: NextRequest) {
         platform_post_ids: Object.keys(platformPostIds).length > 0 ? platformPostIds : null,
       })
       .eq('id', post_id);
+
+    if (statusError) {
+      console.error('[publish] Failed to update post status:', statusError);
+    }
 
     return NextResponse.json({
       success: anySucceeded,
