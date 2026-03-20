@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Metadata } from 'next';
 import {
   Zap,
@@ -16,23 +17,8 @@ import {
 import { PLANS, PLAN_ORDER } from '@/lib/billing-plans';
 
 export const metadata: Metadata = {
-  title: 'BrandPilot — AI-Powered Social Media Management',
   description:
     'Manage all your brands from one dashboard. AI content creation, scheduling, publishing, and analytics across Instagram, LinkedIn, X, Pinterest, Facebook, and TikTok.',
-  openGraph: {
-    title: 'BrandPilot — AI-Powered Social Media Management',
-    description:
-      'Create, schedule, and publish social media content with AI. Manage multiple brands from one dashboard.',
-    url: 'https://brandpilots.io',
-    siteName: 'BrandPilot',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'BrandPilot — AI-Powered Social Media Management',
-    description:
-      'Create, schedule, and publish social media content with AI. Manage multiple brands from one dashboard.',
-  },
 };
 
 const FEATURES = [
@@ -87,7 +73,8 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold tracking-tight">
+          <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight">
+            <Image src="/logo.svg" alt="BrandPilot" width={28} height={28} />
             Brand<span className="text-amber-400">Pilot</span>
           </Link>
           <div className="hidden sm:flex items-center gap-6 text-sm text-zinc-400">

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- BrandPilot logo mark: stylized compass/arrow pointing up-right -->
+  <!-- Represents navigation, direction, piloting multiple brands -->
+
+  <!-- Outer ring — zinc-700 -->
+  <circle cx="24" cy="24" r="22" stroke="#3f3f46" stroke-width="2" fill="#18181b"/>
+
+  <!-- Inner compass arrow — amber accent -->
+  <path d="M24 8 L32 24 L24 20 L16 24 Z" fill="#f59e0b"/>
+  <!-- South pointer — muted -->
+  <path d="M24 40 L32 24 L24 28 L16 24 Z" fill="#3f3f46"/>
+
+  <!-- Center dot -->
+  <circle cx="24" cy="24" r="2.5" fill="#fbbf24"/>
+</svg>

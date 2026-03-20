@@ -14,8 +14,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BrandPilot — Social Media Management",
-  description: "Manage all your brands from one dashboard. Content creation, scheduling, analytics, and AI-powered generation.",
+  title: {
+    default: 'BrandPilot — AI-Powered Social Media Management',
+    template: '%s | BrandPilot',
+  },
+  description:
+    'Create, schedule, and publish social media content across all platforms with AI. Manage multiple brands from one dashboard.',
+  metadataBase: new URL('https://brandpilots.io'),
+  openGraph: {
+    title: 'BrandPilot — AI-Powered Social Media Management',
+    description:
+      'Create, schedule, and publish social media content with AI. Manage multiple brands from one dashboard.',
+    url: 'https://brandpilots.io',
+    siteName: 'BrandPilot',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BrandPilot — AI-Powered Social Media Management',
+    description:
+      'Create, schedule, and publish social media content with AI. Manage multiple brands from one dashboard.',
+  },
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export default function RootLayout({
