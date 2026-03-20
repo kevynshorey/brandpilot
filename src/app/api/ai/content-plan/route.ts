@@ -240,7 +240,7 @@ Rules:
 export async function POST(request: NextRequest) {
   // Rate limit check
   const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return NextResponse.json(
       { error: 'Rate limit exceeded. Try again in 60 seconds.' },
       { status: 429, headers: { 'Retry-After': '60' } },

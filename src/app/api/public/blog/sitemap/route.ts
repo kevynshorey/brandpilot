@@ -7,7 +7,7 @@ const checkRateLimit = createRateLimiter(10, 60_000);
 // GET /api/public/blog/sitemap?workspace=slug
 export async function GET(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return new NextResponse('Rate limit exceeded', { status: 429 });
   }
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     .eq('status', 'published')
     .order('published_at', { ascending: false });
 
-  const baseUrl = `https://${workspaceSlug}.brandpilot.app`;
+  const baseUrl = `https://${workspaceSlug}.brandpilots.io`;
   const urls = (posts || []).map(post => `
   <url>
     <loc>${baseUrl}/blog/${post.slug}</loc>

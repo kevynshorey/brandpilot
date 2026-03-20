@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
   pruneStaleEntries();
 
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return NextResponse.json(
       { error: 'Rate limit exceeded. Try again in 60 seconds.' },
       { status: 429, headers: { 'Retry-After': '60' } },

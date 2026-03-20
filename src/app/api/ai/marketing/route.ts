@@ -357,7 +357,7 @@ Generate the content now. Make it sound like it was crafted by a $10K/month agen
 // ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return NextResponse.json(
       { error: 'Rate limit exceeded. Max 10 requests per minute.' },
       { status: 429, headers: { 'Retry-After': '60' } },

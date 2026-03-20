@@ -70,7 +70,7 @@ export async function fetchWithTimeout(
       signal: controller.signal,
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (compatible; BrandPilotBot/1.0; +https://brandpilot.app)',
+          'Mozilla/5.0 (compatible; BrandPilotBot/1.0; +https://brandpilots.io)',
         Accept: 'text/html,application/xhtml+xml',
       },
       redirect: 'follow',

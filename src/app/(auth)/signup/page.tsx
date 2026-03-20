@@ -32,6 +32,9 @@ export default function SignupPage() {
       return;
     }
 
+    // Fire-and-forget welcome email
+    fetch('/api/auth/welcome', { method: 'POST' }).catch(() => {});
+
     router.push('/dashboard');
   };
 

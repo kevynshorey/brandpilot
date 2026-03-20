@@ -17,7 +17,7 @@ export async function OPTIONS() {
 // GET /api/public/blog?workspace=slug&page=1&limit=10&tag=...
 export async function GET(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return NextResponse.json(
       { error: 'Rate limit exceeded' },
       { status: 429, headers: CORS_HEADERS },

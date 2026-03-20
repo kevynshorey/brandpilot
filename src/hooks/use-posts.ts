@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useWorkspaceStore } from '@/stores/workspace-store';
+import { assertPlanLimit } from '@/hooks/use-plan-limits';
 
 export function usePosts(status?: string) {
   const { activeWorkspace } = useWorkspaceStore();
@@ -87,6 +88,10 @@ export function useCreatePost() {
       utmCampaign?: string;
     }) => {
       if (!activeWorkspace?.id) throw new Error('No workspace selected');
+
+      // Enforce plan limit before creating
+      await assertPlanLimit(activeWorkspace.id, 'posts');
+
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

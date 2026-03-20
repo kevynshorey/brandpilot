@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { createRateLimiter } from '@/lib/rate-limit';
+import { verifyPreviewToken } from '@/lib/preview-token';
 
 const checkRateLimit = createRateLimiter(30, 60_000);
 
@@ -20,7 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return NextResponse.json(
       { error: 'Rate limit exceeded' },
       { status: 429, headers: CORS_HEADERS },
@@ -62,13 +63,31 @@ export async function GET(
     );
   }
 
-  const { data, error } = await supabase
+  // Check for preview token — allows viewing unpublished posts
+  const previewToken = searchParams.get('preview');
+  let isPreview = false;
+
+  let query = supabase
     .from('blog_posts')
-    .select('title, slug, content, excerpt, meta_description, featured_image_url, tags, published_at')
+    .select('id, title, slug, content, excerpt, meta_description, featured_image_url, tags, published_at, status')
     .eq('workspace_id', workspace.id)
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+    .eq('slug', slug);
+
+  if (previewToken) {
+    const verifiedPostId = verifyPreviewToken(previewToken);
+    if (verifiedPostId) {
+      // Valid preview token — fetch any status but verify post ID matches
+      query = query.eq('id', verifiedPostId);
+      isPreview = true;
+    } else {
+      // Invalid/expired token — fall back to published only
+      query = query.eq('status', 'published');
+    }
+  } else {
+    query = query.eq('status', 'published');
+  }
+
+  const { data, error } = await query.single();
 
   if (error || !data) {
     return NextResponse.json(
@@ -85,7 +104,7 @@ export async function GET(
     description: data.meta_description || data.excerpt || '',
     image: data.featured_image_url || undefined,
     datePublished: data.published_at,
-    url: `https://${workspaceSlug}.brandpilot.app/blog/${data.slug}`,
+    url: `https://${workspaceSlug}.brandpilots.io/blog/${data.slug}`,
     publisher: {
       '@type': 'Organization',
       name: workspaceSlug,
@@ -98,12 +117,16 @@ export async function GET(
     og_title: data.title,
     og_description: data.meta_description || data.excerpt || '',
     og_image: data.featured_image_url || null,
-    canonical_url: `https://${workspaceSlug}.brandpilot.app/blog/${data.slug}`,
+    canonical_url: `https://${workspaceSlug}.brandpilots.io/blog/${data.slug}`,
     json_ld: jsonLd,
   };
 
   return NextResponse.json(
-    { post: data, seo },
+    {
+      post: data,
+      seo,
+      ...(isPreview && { preview: true, previewNotice: 'This is a preview. The post has not been published yet.' }),
+    },
     { headers: CORS_HEADERS },
   );
 }

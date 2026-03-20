@@ -1,18 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores/workspace-store';
-
-// Demo scheduled posts
-const DEMO_POSTS = [
-  { id: '1', date: '2026-03-20', caption: 'Launch announcement post', platforms: ['instagram', 'linkedin'], status: 'scheduled' as const },
-  { id: '2', date: '2026-03-22', caption: 'Investment readiness tips', platforms: ['linkedin'], status: 'scheduled' as const },
-  { id: '3', date: '2026-03-18', caption: 'Feature spotlight: AI Coach', platforms: ['instagram'], status: 'published' as const },
-  { id: '4', date: '2026-03-25', caption: 'Customer success story', platforms: ['instagram', 'linkedin'], status: 'draft' as const },
-];
+import { usePosts } from '@/hooks/use-posts';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -26,15 +20,19 @@ function getFirstDayOfMonth(year: number, month: number) {
   return day === 0 ? 6 : day - 1; // Monday = 0
 }
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   draft: 'bg-zinc-200 text-zinc-600',
   scheduled: 'bg-amber-100 text-amber-700',
   published: 'bg-emerald-100 text-emerald-700',
   failed: 'bg-red-100 text-red-700',
+  publishing: 'bg-amber-100 text-amber-700',
+  pending_approval: 'bg-blue-100 text-blue-700',
+  approved: 'bg-indigo-100 text-indigo-700',
 };
 
 export default function CalendarPage() {
   const { activeWorkspace } = useWorkspaceStore();
+  const { data: posts = [], isLoading } = usePosts();
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -43,46 +41,46 @@ export default function CalendarPage() {
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+  // Group posts by date (use scheduled_at for scheduled posts, created_at for others)
   const postsByDate = useMemo(() => {
-    const map: Record<string, typeof DEMO_POSTS> = {};
-    for (const post of DEMO_POSTS) {
-      if (!map[post.date]) map[post.date] = [];
-      map[post.date].push(post);
+    const map: Record<string, Array<{ id: string; caption: string; status: string; platforms: string[] }>> = {};
+    for (const post of posts as Record<string, unknown>[]) {
+      const scheduledAt = post.scheduled_at as string | null;
+      const publishedAt = post.published_at as string | null;
+      const createdAt = post.created_at as string;
+      const dateStr = scheduledAt || publishedAt || createdAt;
+      if (!dateStr) continue;
+
+      const date = new Date(dateStr).toISOString().slice(0, 10);
+      if (!map[date]) map[date] = [];
+      map[date].push({
+        id: post.id as string,
+        caption: post.caption as string,
+        status: post.status as string,
+        platforms: (post.target_platforms as string[]) || [],
+      });
     }
     return map;
-  }, []);
+  }, [posts]);
 
   const prevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
-    }
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(currentYear - 1); }
+    else setCurrentMonth(currentMonth - 1);
   };
 
   const nextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(currentYear + 1); }
+    else setCurrentMonth(currentMonth + 1);
   };
 
   // Build calendar grid
   const cells: Array<{ day: number | null; dateStr: string }> = [];
-  for (let i = 0; i < firstDay; i++) {
-    cells.push({ day: null, dateStr: '' });
-  }
+  for (let i = 0; i < firstDay; i++) cells.push({ day: null, dateStr: '' });
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     cells.push({ day, dateStr });
   }
-  // Pad to complete final week
-  while (cells.length % 7 !== 0) {
-    cells.push({ day: null, dateStr: '' });
-  }
+  while (cells.length % 7 !== 0) cells.push({ day: null, dateStr: '' });
 
   return (
     <div className="space-y-6">
@@ -126,48 +124,57 @@ export default function CalendarPage() {
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7">
-          {cells.map((cell, i) => {
-            const isToday = cell.dateStr === todayStr;
-            const posts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
+        {isLoading ? (
+          <div className="p-12 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-zinc-300 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-7">
+            {cells.map((cell, i) => {
+              const isToday = cell.dateStr === todayStr;
+              const dayPosts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
 
-            return (
-              <div
-                key={i}
-                className={cn(
-                  'min-h-[100px] p-2 border-b border-r border-zinc-100 transition-colors',
-                  cell.day ? 'hover:bg-zinc-50 cursor-pointer' : 'bg-zinc-50/50',
-                  i % 7 === 6 && 'border-r-0',
-                )}
-              >
-                {cell.day && (
-                  <>
-                    <div className={cn(
-                      'w-7 h-7 rounded-full flex items-center justify-center text-sm mb-1',
-                      isToday ? 'bg-amber-500 text-white font-bold' : 'text-zinc-600'
-                    )}>
-                      {cell.day}
-                    </div>
-                    <div className="space-y-1">
-                      {posts.map((post) => (
-                        <div
-                          key={post.id}
-                          className={cn(
-                            'px-2 py-1 rounded text-xs font-medium truncate',
-                            statusColors[post.status]
-                          )}
-                          title={post.caption}
-                        >
-                          {post.caption}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    'min-h-[100px] p-2 border-b border-r border-zinc-100 transition-colors',
+                    cell.day ? 'hover:bg-zinc-50' : 'bg-zinc-50/50',
+                    i % 7 === 6 && 'border-r-0',
+                  )}
+                >
+                  {cell.day && (
+                    <>
+                      <div className={cn(
+                        'w-7 h-7 rounded-full flex items-center justify-center text-sm mb-1',
+                        isToday ? 'bg-amber-500 text-white font-bold' : 'text-zinc-600'
+                      )}>
+                        {cell.day}
+                      </div>
+                      <div className="space-y-1">
+                        {dayPosts.slice(0, 3).map((post) => (
+                          <div
+                            key={post.id}
+                            className={cn(
+                              'px-2 py-1 rounded text-xs font-medium truncate',
+                              statusColors[post.status] || 'bg-zinc-100 text-zinc-600'
+                            )}
+                            title={post.caption}
+                          >
+                            {post.caption}
+                          </div>
+                        ))}
+                        {dayPosts.length > 3 && (
+                          <p className="text-[10px] text-zinc-400 px-1">+{dayPosts.length - 3} more</p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Legend */}
@@ -180,6 +187,9 @@ export default function CalendarPage() {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-emerald-100" /> Published
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-red-100" /> Failed
         </span>
       </div>
     </div>

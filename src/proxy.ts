@@ -1,9 +1,18 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/login', '/signup', '/auth/callback', '/api/make/webhook'];
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/signup',
+  '/auth/callback',
+  '/api/make/webhook',
+  '/api/public/',
+  '/api/billing/webhook',
+  '/api/auth/welcome',
+];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths

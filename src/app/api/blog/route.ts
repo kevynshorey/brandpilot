@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createRateLimiter } from '@/lib/rate-limit';
 import { uniqueSlug } from '@/lib/slugify';
+import { checkPlanLimit, getOrgIdFromWorkspace } from '@/lib/plan-limits';
 
 const checkRateLimit = createRateLimiter(20, 60_000);
 
@@ -12,7 +13,7 @@ function sanitize(text: string, maxLen = 2000): string {
 // GET /api/blog?workspace_id=...&status=...&page=...&limit=...
 export async function GET(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
 // POST /api/blog — create new blog post
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
   }
 
@@ -74,6 +75,18 @@ export async function POST(request: NextRequest) {
     const workspaceId = body.workspace_id;
     if (!workspaceId) {
       return NextResponse.json({ error: 'workspace_id is required' }, { status: 400 });
+    }
+
+    // Enforce plan limit
+    const orgId = await getOrgIdFromWorkspace(workspaceId);
+    if (orgId) {
+      const limit = await checkPlanLimit(orgId, 'blog_posts');
+      if (!limit.allowed) {
+        return NextResponse.json(
+          { error: `Blog post limit reached (${limit.used}/${limit.limit}). Upgrade your plan to continue.` },
+          { status: 403 },
+        );
+      }
     }
 
     const title = sanitize(String(body.title || ''), 500);
