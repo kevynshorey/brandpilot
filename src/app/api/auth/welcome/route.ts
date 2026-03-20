@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createRateLimiter } from '@/lib/rate-limit';
-import { sendWelcomeEmail } from '@/lib/email';
+import { sendWelcomeEmail, sendAdminSignupNotification } from '@/lib/email';
 
 const checkRateLimit = createRateLimiter(5, 60_000);
 
@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const name = user.user_metadata?.full_name || user.email.split('@')[0];
-    await sendWelcomeEmail(user.email, name);
+    await Promise.allSettled([
+      sendWelcomeEmail(user.email, name),
+      sendAdminSignupNotification(user.email, name),
+    ]);
     return NextResponse.json({ sent: true });
   } catch (err) {
     console.error('[welcome-email] Failed:', err);

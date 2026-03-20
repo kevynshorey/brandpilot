@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { PLANS, PLAN_ORDER } from '@/lib/billing-plans';
 import { WaitlistForm } from '@/components/waitlist-form';
+import { FeedbackForm } from '@/components/feedback-form';
 
 export const metadata: Metadata = {
   description:
@@ -240,6 +241,22 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Feedback */}
+      <section id="feedback" className="py-20 border-t border-zinc-800/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Got feedback?
+            </h2>
+            <p className="text-zinc-400 max-w-md mx-auto">
+              We&apos;re building BrandPilot in the open. Tell us what features you need,
+              report a bug, or just say hi.
+            </p>
+          </div>
+          <FeedbackForm page="landing" />
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-zinc-800/60 py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -253,6 +270,9 @@ export default function LandingPage() {
               </a>
               <a href="#pricing" className="hover:text-zinc-300 transition-colors">
                 Pricing
+              </a>
+              <a href="#feedback" className="hover:text-zinc-300 transition-colors">
+                Feedback
               </a>
               <Link href="/login" className="hover:text-zinc-300 transition-colors">
                 Log in

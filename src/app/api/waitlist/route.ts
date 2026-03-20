@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createRateLimiter } from '@/lib/rate-limit';
-import { sendWaitlistConfirmation } from '@/lib/email';
+import { sendWaitlistConfirmation, sendAdminWaitlistNotification } from '@/lib/email';
 
 const checkRateLimit = createRateLimiter(5, 60_000, 'waitlist');
 
@@ -47,11 +47,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to join waitlist' }, { status: 500 });
     }
 
-    // Send confirmation email (best-effort, don't fail the request)
+    // Send confirmation email + admin notification (best-effort, don't fail the request)
     try {
-      await sendWaitlistConfirmation(email);
+      await Promise.allSettled([
+        sendWaitlistConfirmation(email),
+        sendAdminWaitlistNotification(email, source),
+      ]);
     } catch (emailErr) {
-      console.error('[waitlist] Confirmation email failed:', emailErr);
+      console.error('[waitlist] Email notification failed:', emailErr);
     }
 
     return NextResponse.json({ success: true, message: "You're in! Check your email." }, { status: 201 });

@@ -179,6 +179,111 @@ export async function sendWaitlistConfirmation(to: string) {
   });
 }
 
+// --- Admin notifications ---
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'kevynshorey@gmail.com';
+
+export async function sendAdminWaitlistNotification(email: string, source: string) {
+  try {
+    await sendEmail({
+      to: ADMIN_EMAIL,
+      subject: `🚀 New waitlist signup: ${email}`,
+      html: wrap(`
+        <h2 style="color:#fff;margin:0 0 8px;font-size:20px;">New Waitlist Signup</h2>
+        <div style="background:#27272a;border-radius:8px;padding:16px;margin:0 0 20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="color:#71717a;font-size:13px;padding:4px 0;">Email</td>
+              <td style="color:#f59e0b;font-size:13px;padding:4px 0;text-align:right;font-weight:600;">${email}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:13px;padding:4px 0;">Source</td>
+              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${source}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:13px;padding:4px 0;">Time</td>
+              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toLocaleString('en-US', { timeZone: 'America/Barbados' })}</td>
+            </tr>
+          </table>
+        </div>
+      `),
+    });
+  } catch (err) {
+    console.error('[email] Admin waitlist notification failed:', err);
+  }
+}
+
+export async function sendAdminSignupNotification(email: string, name: string) {
+  try {
+    await sendEmail({
+      to: ADMIN_EMAIL,
+      subject: `🎉 New account created: ${name}`,
+      html: wrap(`
+        <h2 style="color:#fff;margin:0 0 8px;font-size:20px;">New Account Created</h2>
+        <div style="background:#27272a;border-radius:8px;padding:16px;margin:0 0 20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="color:#71717a;font-size:13px;padding:4px 0;">Name</td>
+              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;font-weight:600;">${name}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:13px;padding:4px 0;">Email</td>
+              <td style="color:#f59e0b;font-size:13px;padding:4px 0;text-align:right;">${email}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:13px;padding:4px 0;">Time</td>
+              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toLocaleString('en-US', { timeZone: 'America/Barbados' })}</td>
+            </tr>
+          </table>
+        </div>
+        <p style="color:#a1a1aa;font-size:13px;margin:0;">
+          This user has been onboarded into BrandPilot and should now have a workspace.
+        </p>
+      `),
+    });
+  } catch (err) {
+    console.error('[email] Admin signup notification failed:', err);
+  }
+}
+
+export async function sendAdminFeedbackNotification(
+  senderEmail: string,
+  senderName: string,
+  message: string,
+  page: string,
+) {
+  await sendEmail({
+    to: ADMIN_EMAIL,
+    subject: `💬 Feedback from ${senderName || senderEmail}`,
+    html: wrap(`
+      <h2 style="color:#fff;margin:0 0 8px;font-size:20px;">Customer Feedback</h2>
+      <div style="background:#27272a;border-radius:8px;padding:16px;margin:0 0 20px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="color:#71717a;font-size:13px;padding:4px 0;">From</td>
+            <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${senderName || 'Anonymous'}</td>
+          </tr>
+          <tr>
+            <td style="color:#71717a;font-size:13px;padding:4px 0;">Email</td>
+            <td style="color:#f59e0b;font-size:13px;padding:4px 0;text-align:right;">${senderEmail || 'Not provided'}</td>
+          </tr>
+          <tr>
+            <td style="color:#71717a;font-size:13px;padding:4px 0;">Page</td>
+            <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${page}</td>
+          </tr>
+          <tr>
+            <td style="color:#71717a;font-size:13px;padding:4px 0;">Time</td>
+            <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toLocaleString('en-US', { timeZone: 'America/Barbados' })}</td>
+          </tr>
+        </table>
+      </div>
+      <div style="background:#18181b;border:1px solid #27272a;border-radius:8px;padding:16px;">
+        <p style="color:#a1a1aa;font-size:14px;line-height:1.7;margin:0;white-space:pre-wrap;">${message}</p>
+      </div>
+    `),
+  });
+}
+
 export async function sendPaymentFailedEmail(to: string) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://brandpilots.io';
   await sendEmail({
