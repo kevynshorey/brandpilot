@@ -5,7 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store';
 import { useUpdateWorkspace } from '@/hooks/use-workspaces';
 import { useSocialAccounts, useConnectSocialAccount, useDisconnectSocialAccount } from '@/hooks/use-social-accounts';
 import { useBillingUsage, useCheckout, useCustomerPortal } from '@/hooks/use-billing';
-import { useOrganization } from '@/hooks/use-user';
+import { useOrganization, useUser } from '@/hooks/use-user';
 import { PLANS, PLAN_ORDER, getPlanById, isUpgrade, type PlanId } from '@/lib/billing-plans';
 import { toast } from 'sonner';
 import {
@@ -339,27 +339,44 @@ export default function SettingsPage() {
       )}
 
       {/* Team */}
-      {tab === 'team' && (
-        <div className="bg-white rounded-xl border border-zinc-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-zinc-900">Team Members</h2>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-zinc-900 rounded-lg text-sm font-semibold hover:bg-amber-400 transition-colors">
-              <Plus className="w-4 h-4" /> Invite
-            </button>
-          </div>
-          <div className="p-4 bg-zinc-50 rounded-lg flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">KS</div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-zinc-900">Kevyn Shorey</p>
-              <p className="text-xs text-zinc-400">kevynshorey@gmail.com</p>
-            </div>
-            <span className="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Owner</span>
-          </div>
-        </div>
-      )}
+      {tab === 'team' && <TeamTab />}
 
       {/* Billing */}
       {tab === 'billing' && <BillingTab />}
+    </div>
+  );
+}
+
+// --- Team Tab (dynamic from auth) ---
+function TeamTab() {
+  const { data: user } = useUser();
+  const fullName = (user?.user_metadata?.full_name as string) || 'You';
+  const email = user?.email || '';
+  const initials = fullName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '??';
+
+  return (
+    <div className="bg-white rounded-xl border border-zinc-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-zinc-900">Team Members</h2>
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-zinc-900 rounded-lg text-sm font-semibold hover:bg-amber-400 transition-colors">
+          <Plus className="w-4 h-4" /> Invite
+        </button>
+      </div>
+      <div className="p-4 bg-zinc-50 rounded-lg flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">
+          {initials}
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-zinc-900">{fullName}</p>
+          <p className="text-xs text-zinc-400">{email}</p>
+        </div>
+        <span className="px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Owner</span>
+      </div>
     </div>
   );
 }

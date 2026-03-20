@@ -115,7 +115,7 @@ export function ResearchStep({
         <textarea
           value={topic}
           onChange={e => onTopicChange(e.target.value)}
-          placeholder="e.g. 5 Things to Know Before Buying Beachfront Property in Barbados"
+          placeholder="e.g. '10 Tips for Growing Your Brand on Social Media' or 'The Ultimate Guide to Content Marketing'"
           rows={3}
           className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 resize-none"
         />

@@ -229,7 +229,7 @@ export function PublishStep({
             <input
               value={editTags}
               onChange={e => setEditTags(e.target.value)}
-              placeholder="real estate, barbados, beachfront"
+              placeholder="e.g. marketing, social media, branding"
               className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30"
             />
             {editTags && (

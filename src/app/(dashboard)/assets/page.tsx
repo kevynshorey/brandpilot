@@ -10,12 +10,9 @@ import {
   Search,
   Grid3X3,
   List,
-  Tag,
   Trash2,
   Download,
-  Plus,
   X,
-  Filter,
 } from 'lucide-react';
 
 type AssetType = 'all' | 'image' | 'video' | 'logo';
@@ -31,34 +28,13 @@ interface Asset {
   dimensions?: string;
 }
 
-// Demo assets
-const DEMO_ASSETS: Record<string, Asset[]> = {
-  'prime-barbados': [
-    { id: '1', name: 'Old Trees Cyano - Exterior', type: 'image', url: '/demo/property-1.jpg', tags: ['west coast', 'luxury', 'sales'], size: '2.4 MB', uploadedAt: '2026-03-15', dimensions: '1920x1080' },
-    { id: '2', name: 'Blue Oyster - Pool View', type: 'image', url: '/demo/property-2.jpg', tags: ['holiday rental', 'pool', 'south coast'], size: '1.8 MB', uploadedAt: '2026-03-14', dimensions: '1920x1080' },
-    { id: '3', name: 'Dolphin Beach House - Aerial', type: 'image', url: '/demo/property-3.jpg', tags: ['beachfront', 'aerial', 'west coast'], size: '3.1 MB', uploadedAt: '2026-03-12', dimensions: '2560x1440' },
-    { id: '4', name: 'Sandy Lane Sunset', type: 'image', url: '/demo/lifestyle-1.jpg', tags: ['lifestyle', 'sunset', 'sandy lane'], size: '1.2 MB', uploadedAt: '2026-03-10', dimensions: '1080x1080' },
-    { id: '5', name: 'Prime Barbados Logo', type: 'logo', url: '/demo/logo-pb.png', tags: ['brand', 'logo'], size: '45 KB', uploadedAt: '2026-02-01', dimensions: '500x500' },
-  ],
-  'island-chem': [
-    { id: '6', name: 'Chem Cutter 2.0 - Product Shot', type: 'image', url: '/demo/product-1.jpg', tags: ['kitchen', 'degreaser', 'product'], size: '890 KB', uploadedAt: '2026-03-10', dimensions: '1080x1080' },
-    { id: '7', name: 'Bouquet Floor Cleaner', type: 'image', url: '/demo/product-2.jpg', tags: ['janitorial', 'floor', 'product'], size: '720 KB', uploadedAt: '2026-03-10', dimensions: '1080x1080' },
-    { id: '8', name: 'Magi-Quat Sanitizer', type: 'image', url: '/demo/product-3.jpg', tags: ['medical', 'sanitizer', 'product'], size: '650 KB', uploadedAt: '2026-03-08', dimensions: '1080x1080' },
-    { id: '9', name: 'Kitchen Cleaning Demo', type: 'video', url: '/demo/video-1.mp4', tags: ['kitchen', 'demo', 'before-after'], size: '15.2 MB', uploadedAt: '2026-03-05' },
-  ],
-  'are-you-vintage': [
-    { id: '10', name: 'Vintage Denim Jacket - Studio', type: 'image', url: '/demo/vintage-1.jpg', tags: ['denim', 'studio', 'product'], size: '1.5 MB', uploadedAt: '2026-03-16', dimensions: '1080x1350' },
-    { id: '11', name: 'Thrift Store Interior', type: 'image', url: '/demo/vintage-2.jpg', tags: ['store', 'interior', 'lifestyle'], size: '2.1 MB', uploadedAt: '2026-03-14', dimensions: '1920x1080' },
-  ],
-  'launchpath': [
-    { id: '12', name: 'Dashboard Screenshot', type: 'image', url: '/demo/lp-1.jpg', tags: ['product', 'screenshot', 'dashboard'], size: '450 KB', uploadedAt: '2026-03-18', dimensions: '1920x1080' },
-  ],
-};
+// Assets will be loaded from the API in a future release
+// For now, show an empty state encouraging users to upload their own media
 
 export default function AssetsPage() {
   const { activeWorkspace } = useWorkspaceStore();
-  const slug = activeWorkspace?.slug || 'prime-barbados';
-  const assets = DEMO_ASSETS[slug] || [];
+  // TODO: Load assets from API when asset storage is implemented
+  const assets: Asset[] = [];
 
   const [filter, setFilter] = useState<AssetType>('all');
   const [search, setSearch] = useState('');

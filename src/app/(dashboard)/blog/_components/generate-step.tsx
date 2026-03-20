@@ -129,7 +129,7 @@ export function GenerateStep({
         <input
           value={keywords}
           onChange={e => setKeywords(e.target.value)}
-          placeholder="SEO keywords (optional): beachfront property, Barbados real estate"
+          placeholder="SEO keywords (optional): e.g. content marketing, social media strategy"
           className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 mb-4"
         />
 

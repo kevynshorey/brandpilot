@@ -189,7 +189,7 @@ export default function CreatePostPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error('AI marketing API error:', res.status, err);
+        // Log non-sensitive error info for debugging
         throw new Error(err.error || `Generation failed (${res.status})`);
       }
       const data = await res.json();
@@ -254,7 +254,7 @@ export default function CreatePostPage() {
           <input
             value={scrapeUrl}
             onChange={e => setScrapeUrl(e.target.value)}
-            placeholder="https://islandchemsolutions.com/products/ultimate-degreaser"
+            placeholder="https://example.com/products/your-product"
             className="flex-1 px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30"
           />
           <button
@@ -310,7 +310,7 @@ export default function CreatePostPage() {
           <input
             value={aiTopic}
             onChange={e => setAiTopic(e.target.value)}
-            placeholder="Or type a topic: e.g. 'New luxury villa listing in Sandy Lane'"
+            placeholder="Or type a topic: e.g. 'Spring collection launch' or 'New product announcement'"
             className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30"
           />
         </div>
