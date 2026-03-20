@@ -15,6 +15,7 @@ import {
   Twitter,
 } from 'lucide-react';
 import { PLANS, PLAN_ORDER } from '@/lib/billing-plans';
+import { WaitlistForm } from '@/components/waitlist-form';
 
 export const metadata: Metadata = {
   description:
@@ -92,18 +93,18 @@ export default function LandingPage() {
             >
               Log in
             </Link>
-            <Link
-              href="/signup"
+            <a
+              href="#waitlist"
               className="px-4 py-2 bg-amber-500 text-zinc-900 rounded-lg text-sm font-semibold hover:bg-amber-400 transition-colors"
             >
-              Get Started Free
-            </Link>
+              Join Waitlist
+            </a>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section id="waitlist" className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(251,191,36,0.08),transparent_60%)]" />
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-20 sm:pt-32 sm:pb-28 relative">
           <div className="max-w-3xl mx-auto text-center">
@@ -121,21 +122,12 @@ export default function LandingPage() {
               track what works — all in one place. Built for creators,
               solopreneurs, and growing teams.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Link
-                href="/signup"
-                className="w-full sm:w-auto px-8 py-3.5 bg-amber-500 text-zinc-900 rounded-xl text-sm font-bold hover:bg-amber-400 transition-colors flex items-center justify-center gap-2"
-              >
-                Start Free — No Card Required
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <a
-                href="#pricing"
-                className="w-full sm:w-auto px-8 py-3.5 border border-zinc-700 text-zinc-300 rounded-xl text-sm font-medium hover:border-zinc-500 hover:text-white transition-colors text-center"
-              >
-                View Pricing
-              </a>
+            <div className="mb-4">
+              <WaitlistForm source="hero" />
             </div>
+            <p className="text-xs text-zinc-500 mb-12">
+              Join the waitlist for early access. No spam, ever.
+            </p>
 
             {/* Platform icons */}
             <div className="flex items-center justify-center gap-6">
@@ -240,16 +232,10 @@ export default function LandingPage() {
               Ready to pilot your brand?
             </h2>
             <p className="text-zinc-400 max-w-md mx-auto mb-8">
-              Join creators and businesses using BrandPilot to save hours every
-              week on social media. Start free, upgrade when you grow.
+              Join creators and businesses getting early access to BrandPilot.
+              Be the first to manage all your brands from one AI-powered dashboard.
             </p>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-amber-500 text-zinc-900 rounded-xl text-sm font-bold hover:bg-amber-400 transition-colors"
-            >
-              Get Started Free
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <WaitlistForm source="cta" />
           </div>
         </div>
       </section>

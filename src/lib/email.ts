@@ -154,6 +154,31 @@ export async function sendUsageLimitWarning(
   });
 }
 
+export async function sendWaitlistConfirmation(to: string) {
+  await sendEmail({
+    to,
+    subject: "You're on the BrandPilot waitlist!",
+    html: wrap(`
+      <h2 style="color:#fff;margin:0 0 8px;font-size:20px;">You're on the list!</h2>
+      <p style="color:#a1a1aa;font-size:14px;line-height:1.6;margin:0 0 20px;">
+        Thanks for your interest in BrandPilot. We're building the AI-powered social media management platform
+        that lets you run every brand from one dashboard.
+      </p>
+      <p style="color:#a1a1aa;font-size:14px;line-height:1.6;margin:0 0 20px;">
+        We'll notify you as soon as early access opens. In the meantime, here's what to expect:
+      </p>
+      <ul style="color:#a1a1aa;font-size:14px;line-height:1.8;padding-left:20px;margin:0 0 24px;">
+        <li><strong style="color:#d4d4d8;">AI content generation</strong> — captions, hashtags, and full blog posts in your brand voice</li>
+        <li><strong style="color:#d4d4d8;">6-platform scheduling</strong> — Instagram, Facebook, LinkedIn, X, Pinterest, TikTok</li>
+        <li><strong style="color:#d4d4d8;">Multi-brand workspaces</strong> — one dashboard for all your brands</li>
+      </ul>
+      <p style="color:#71717a;font-size:12px;margin:0;">
+        You're receiving this because you signed up at brandpilots.io.
+      </p>
+    `),
+  });
+}
+
 export async function sendPaymentFailedEmail(to: string) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://brandpilots.io';
   await sendEmail({
