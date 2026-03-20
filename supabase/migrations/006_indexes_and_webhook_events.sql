@@ -39,7 +39,7 @@ create index if not exists idx_social_accounts_workspace_active
 
 -- Workspaces: org lookup (for plan limit checks)
 create index if not exists idx_workspaces_org_id
-  on public.workspaces (organization_id);
+  on public.workspaces (org_id);
 
 -- Org members: user membership checks
 create index if not exists idx_org_members_user_org

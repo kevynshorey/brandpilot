@@ -44,7 +44,7 @@ export async function checkPlanLimit(
   const { data: workspaces } = await supabase
     .from('workspaces')
     .select('id')
-    .eq('organization_id', orgId);
+    .eq('org_id', orgId);
 
   const workspaceIds = (workspaces || []).map((w) => w.id);
 
@@ -119,7 +119,7 @@ export async function getOrgIdFromWorkspace(workspaceId: string): Promise<string
   const supabase = createServiceClient(supabaseUrl, serviceRoleKey);
   const { data, error } = await supabase
     .from('workspaces')
-    .select('organization_id')
+    .select('org_id')
     .eq('id', workspaceId)
     .single();
 
@@ -128,5 +128,5 @@ export async function getOrgIdFromWorkspace(workspaceId: string): Promise<string
     return null;
   }
 
-  return data?.organization_id ?? null;
+  return data?.org_id ?? null;
 }

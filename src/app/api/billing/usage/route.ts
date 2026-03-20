@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
   const { data: workspaces, error: wsError } = await supabase
     .from('workspaces')
     .select('id')
-    .eq('organization_id', orgId);
+    .eq('org_id', orgId);
 
   if (wsError) {
     console.error('[usage] Workspace query error:', wsError);

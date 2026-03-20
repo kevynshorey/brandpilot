@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // Fetch the post
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('*, workspace:workspaces!inner(organization_id), post_media(*)')
+      .select('*, workspace:workspaces!inner(org_id), post_media(*)')
       .eq('id', post_id)
       .single();
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to this post's org
-    const orgId = (post.workspace as { organization_id: string })?.organization_id;
+    const orgId = (post.workspace as { org_id: string })?.org_id;
     if (orgId) {
       const hasAccess = await verifyOrgMembership(user.userId, orgId);
       if (!hasAccess) {
