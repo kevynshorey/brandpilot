@@ -50,7 +50,7 @@ export default function SignupPage() {
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Kevyn Shorey"
+            placeholder="Your full name"
             required
             className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400/50"
           />

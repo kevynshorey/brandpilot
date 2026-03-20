@@ -164,7 +164,7 @@ export default function OnboardingPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Are You Vintage"
+                placeholder="e.g., Acme Studio"
                 className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-400/30"
                 autoFocus
               />

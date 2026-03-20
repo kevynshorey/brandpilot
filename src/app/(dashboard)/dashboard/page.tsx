@@ -206,7 +206,7 @@ function RecentBlogsWidget() {
 
 export default function DashboardPage() {
   const { activeWorkspace } = useWorkspaceStore();
-  const brandName = activeWorkspace?.name || 'Are You Vintage';
+  const brandName = activeWorkspace?.name || 'My Brand';
 
   return (
     <div className="space-y-6">

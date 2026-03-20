@@ -231,12 +231,7 @@ BEGIN
   INSERT INTO public.org_members (org_id, user_id, role)
   VALUES (new_org_id, NEW.id, 'owner');
 
-  -- Create 4 default workspaces
-  INSERT INTO public.workspaces (org_id, name, slug, industry) VALUES
-    (new_org_id, 'Are You Vintage', 'are-you-vintage', 'Lifestyle & Fashion'),
-    (new_org_id, 'Island Chem Solutions', 'island-chem', 'B2B Cleaning Products'),
-    (new_org_id, 'Prime Barbados', 'prime-barbados', 'Luxury Real Estate'),
-    (new_org_id, 'LaunchPath', 'launchpath', 'SaaS / EdTech');
+  -- No default workspaces — onboarding guides users to create their first brand
 
   RETURN NEW;
 END;
