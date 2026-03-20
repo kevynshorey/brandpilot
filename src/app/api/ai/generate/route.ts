@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRateLimiter } from '@/lib/rate-limit';
+import { getAuthUser } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(10, 60_000, 'ai-generate');
 
@@ -16,6 +17,11 @@ export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
   if (!(await checkRateLimit(ip))) {
     return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429, headers: { 'Retry-After': '60' } });
+  }
+
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {

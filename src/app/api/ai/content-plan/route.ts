@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRateLimiter } from '@/lib/rate-limit';
+import { getAuthUser } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(5, 60_000, 'ai-content-plan');
 
@@ -229,6 +230,11 @@ export async function POST(request: NextRequest) {
       { error: 'Rate limit exceeded. Try again in 60 seconds.' },
       { status: 429, headers: { 'Retry-After': '60' } },
     );
+  }
+
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
