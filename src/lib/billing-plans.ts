@@ -1,4 +1,4 @@
-export type PlanId = 'free' | 'starter' | 'pro' | 'business';
+export type PlanId = 'free' | 'starter' | 'pro' | 'business' | 'admin';
 
 export interface PlanDefinition {
   id: PlanId;
@@ -125,6 +125,32 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
       'API access',
       'White-label reports',
       'Dedicated support',
+    ],
+  },
+  admin: {
+    id: 'admin',
+    name: 'Admin',
+    description: 'Platform owner — unlimited everything',
+    price: 0,
+    yearlyPrice: 0,
+    stripePriceId: null,
+    stripeYearlyPriceId: null,
+    limits: {
+      maxWorkspaces: Infinity,
+      maxPostsPerMonth: Infinity,
+      maxBlogPostsPerMonth: Infinity,
+      maxSocialAccounts: Infinity,
+      aiGenerations: Infinity,
+      teamMembers: Infinity,
+    },
+    features: [
+      'Unlimited workspaces',
+      'Unlimited social accounts',
+      'Unlimited AI posts',
+      'Unlimited blog posts',
+      'Unlimited team members',
+      'Full platform access',
+      'Admin dashboard',
     ],
   },
 };

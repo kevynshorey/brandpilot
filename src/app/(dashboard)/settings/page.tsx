@@ -366,14 +366,15 @@ export default function SettingsPage() {
 
 // --- Usage meter bar ---
 function UsageMeter({ label, used, limit }: { label: string; used: number; limit: number }) {
-  const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-  const isHigh = pct >= 80;
+  const isUnlimited = !isFinite(limit);
+  const pct = isUnlimited ? 0 : limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const isHigh = !isUnlimited && pct >= 80;
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
         <span className="text-zinc-700">{label}</span>
         <span className={cn('font-medium', isHigh ? 'text-red-600' : 'text-zinc-500')}>
-          {used.toLocaleString()} / {limit.toLocaleString()}
+          {used.toLocaleString()} / {isUnlimited ? '∞' : limit.toLocaleString()}
         </span>
       </div>
       <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">

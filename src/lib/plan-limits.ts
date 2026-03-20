@@ -40,6 +40,11 @@ export async function checkPlanLimit(
   const planId = ((org?.plan as string) || 'free') as PlanId;
   const plan = PLANS[planId] || PLANS.free;
 
+  // Admin plan = unlimited, skip counting
+  if (planId === 'admin') {
+    return { allowed: true, used: 0, limit: Infinity, plan: planId };
+  }
+
   // Get all workspace IDs for this org
   const { data: workspaces } = await supabase
     .from('workspaces')
