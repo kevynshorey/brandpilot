@@ -21,6 +21,8 @@ import {
   X,
   Repeat2,
   Shield,
+  Hash,
+  LayoutTemplate,
 } from 'lucide-react';
 import { signOut } from '@/hooks/use-user';
 import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher';
@@ -33,6 +35,8 @@ const navItems = [
   { href: '/posts', label: 'Posts', icon: FileText },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
   { href: '/repurpose', label: 'Repurpose', icon: Repeat2 },
+  { href: '/hashtags', label: 'Hashtags', icon: Hash },
+  { href: '/templates', label: 'Templates', icon: LayoutTemplate },
   { href: '/approvals', label: 'Approvals', icon: Shield },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/assets', label: 'Assets', icon: Image },

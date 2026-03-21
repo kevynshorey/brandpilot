@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useWorkspaceStore } from '@/stores/workspace-store';
 import { useBrandGuidelines, useUpdateBrandGuidelines } from '@/hooks/use-workspaces';
 import { toast } from 'sonner';
-import { Save, Plus, X, Palette, Type, MessageSquare, Hash, Loader2 } from 'lucide-react';
+import { Save, Plus, X, Palette, Type, MessageSquare, Hash, Loader2, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 
 export default function BrandPage() {
   const { activeWorkspace } = useWorkspaceStore();
@@ -92,14 +93,23 @@ export default function BrandPage() {
           <h1 className="text-2xl font-bold text-zinc-900">Brand Guidelines</h1>
           <p className="text-sm text-zinc-500">{activeWorkspace?.name || 'Select a workspace'} — AI content will follow these rules</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={updateGuidelines.isPending}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-zinc-900 rounded-xl text-sm font-semibold hover:bg-amber-400 transition-colors disabled:opacity-50"
-        >
-          {updateGuidelines.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Save Guidelines
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/brand/analyze"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-zinc-200 text-zinc-700 rounded-xl text-sm font-medium hover:bg-zinc-50 transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            Analyze Voice
+          </Link>
+          <button
+            onClick={handleSave}
+            disabled={updateGuidelines.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-zinc-900 rounded-xl text-sm font-semibold hover:bg-amber-400 transition-colors disabled:opacity-50"
+          >
+            {updateGuidelines.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Guidelines
+          </button>
+        </div>
       </div>
 
       {/* Tone of Voice */}
