@@ -129,6 +129,26 @@ export function useCreatePost() {
   });
 }
 
+export function useUpdatePost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId, updates }: { postId: string; updates: Record<string, unknown> }) => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('posts')
+        .update(updates)
+        .eq('id', postId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+}
+
 export function useUpdatePostStatus() {
   const queryClient = useQueryClient();
   return useMutation({

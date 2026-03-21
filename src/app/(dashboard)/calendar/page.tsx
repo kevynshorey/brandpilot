@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Plus, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores/workspace-store';
 import { usePosts } from '@/hooks/use-posts';
+import { CalendarGrid } from '@/components/calendar/calendar-grid';
+import { QuickAddDialog } from '@/components/calendar/quick-add-dialog';
+import type { CalendarPost } from '@/components/calendar/draggable-post-card';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -20,30 +21,21 @@ function getFirstDayOfMonth(year: number, month: number) {
   return day === 0 ? 6 : day - 1; // Monday = 0
 }
 
-const statusColors: Record<string, string> = {
-  draft: 'bg-zinc-200 text-zinc-600',
-  scheduled: 'bg-amber-100 text-amber-700',
-  published: 'bg-emerald-100 text-emerald-700',
-  failed: 'bg-red-100 text-red-700',
-  publishing: 'bg-amber-100 text-amber-700',
-  pending_approval: 'bg-blue-100 text-blue-700',
-  approved: 'bg-indigo-100 text-indigo-700',
-};
-
 export default function CalendarPage() {
   const { activeWorkspace } = useWorkspaceStore();
   const { data: posts = [], isLoading } = usePosts();
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [quickAddDate, setQuickAddDate] = useState<string | null>(null);
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  // Group posts by date (use scheduled_at for scheduled posts, created_at for others)
+  // Group posts by date
   const postsByDate = useMemo(() => {
-    const map: Record<string, Array<{ id: string; caption: string; status: string; platforms: string[] }>> = {};
+    const map: Record<string, CalendarPost[]> = {};
     for (const post of posts as Record<string, unknown>[]) {
       const scheduledAt = post.scheduled_at as string | null;
       const publishedAt = post.published_at as string | null;
@@ -63,6 +55,18 @@ export default function CalendarPage() {
     return map;
   }, [posts]);
 
+  // Build calendar grid cells
+  const cells = useMemo(() => {
+    const result: Array<{ day: number | null; dateStr: string }> = [];
+    for (let i = 0; i < firstDay; i++) result.push({ day: null, dateStr: '' });
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      result.push({ day, dateStr });
+    }
+    while (result.length % 7 !== 0) result.push({ day: null, dateStr: '' });
+    return result;
+  }, [currentYear, currentMonth, daysInMonth, firstDay]);
+
   const prevMonth = () => {
     if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(currentYear - 1); }
     else setCurrentMonth(currentMonth - 1);
@@ -73,29 +77,22 @@ export default function CalendarPage() {
     else setCurrentMonth(currentMonth + 1);
   };
 
-  // Build calendar grid
-  const cells: Array<{ day: number | null; dateStr: string }> = [];
-  for (let i = 0; i < firstDay; i++) cells.push({ day: null, dateStr: '' });
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    cells.push({ day, dateStr });
-  }
-  while (cells.length % 7 !== 0) cells.push({ day: null, dateStr: '' });
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Content Calendar</h1>
-          <p className="text-sm text-zinc-500">{activeWorkspace?.name || 'All workspaces'}</p>
+          <p className="text-sm text-zinc-500">
+            {activeWorkspace?.name || 'All workspaces'}
+            <span className="text-zinc-400 ml-2">— drag posts between days to reschedule</span>
+          </p>
         </div>
         <Link
           href="/create"
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-zinc-900 rounded-xl text-sm font-semibold hover:bg-amber-400 transition-colors"
         >
-          <Plus className="w-4 h-4" />
-          New Post
+          <Plus className="w-4 h-4" /> New Post
         </Link>
       </div>
 
@@ -129,51 +126,12 @@ export default function CalendarPage() {
             <Loader2 className="w-6 h-6 text-zinc-300 animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-7">
-            {cells.map((cell, i) => {
-              const isToday = cell.dateStr === todayStr;
-              const dayPosts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
-
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    'min-h-[100px] p-2 border-b border-r border-zinc-100 transition-colors',
-                    cell.day ? 'hover:bg-zinc-50' : 'bg-zinc-50/50',
-                    i % 7 === 6 && 'border-r-0',
-                  )}
-                >
-                  {cell.day && (
-                    <>
-                      <div className={cn(
-                        'w-7 h-7 rounded-full flex items-center justify-center text-sm mb-1',
-                        isToday ? 'bg-amber-500 text-white font-bold' : 'text-zinc-600'
-                      )}>
-                        {cell.day}
-                      </div>
-                      <div className="space-y-1">
-                        {dayPosts.slice(0, 3).map((post) => (
-                          <div
-                            key={post.id}
-                            className={cn(
-                              'px-2 py-1 rounded text-xs font-medium truncate',
-                              statusColors[post.status] || 'bg-zinc-100 text-zinc-600'
-                            )}
-                            title={post.caption}
-                          >
-                            {post.caption}
-                          </div>
-                        ))}
-                        {dayPosts.length > 3 && (
-                          <p className="text-[10px] text-zinc-400 px-1">+{dayPosts.length - 3} more</p>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <CalendarGrid
+            cells={cells}
+            postsByDate={postsByDate}
+            todayStr={todayStr}
+            onQuickAdd={(dateStr) => setQuickAddDate(dateStr)}
+          />
         )}
       </div>
 
@@ -192,6 +150,13 @@ export default function CalendarPage() {
           <span className="w-3 h-3 rounded bg-red-100" /> Failed
         </span>
       </div>
+
+      {/* Quick Add Dialog */}
+      <QuickAddDialog
+        open={!!quickAddDate}
+        onClose={() => setQuickAddDate(null)}
+        date={quickAddDate || ''}
+      />
     </div>
   );
 }
