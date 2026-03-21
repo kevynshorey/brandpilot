@@ -2,14 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createRateLimiter } from '@/lib/rate-limit';
 import { getAuthUser, verifyOrgMembership } from '@/lib/auth';
+import { publishToAllPlatforms, type PublishRequest } from '@/lib/publishers';
 
-const checkRateLimit = createRateLimiter(10, 60_000);
+const checkRateLimit = createRateLimiter(10, 60_000, 'social-publish');
 
 // POST /api/social/publish — Publish a post to connected social platforms
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
   if (!(await checkRateLimit(ip))) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    return NextResponse.json(
+      { error: 'Rate limit exceeded' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    );
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Fetch the post
+    // Fetch the post with workspace and media
     const { data: post, error: postError } = await supabase
       .from('posts')
       .select('*, workspace:workspaces!inner(org_id), post_media(*)')
@@ -59,17 +63,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark as publishing
-    const { error: updateError } = await supabase
-      .from('posts')
-      .update({ status: 'publishing' })
-      .eq('id', post_id);
-
-    if (updateError) {
-      console.error('[publish] Failed to mark post as publishing:', updateError);
-    }
+    await supabase.from('posts').update({ status: 'publishing' }).eq('id', post_id);
 
     const platforms = (post.target_platforms as string[]) || [];
-    const results: Record<string, { success: boolean; platform_post_id?: string; error?: string }> = {};
 
     // Fetch connected social accounts for this workspace
     const { data: accounts } = await supabase
@@ -78,72 +74,38 @@ export async function POST(request: NextRequest) {
       .eq('workspace_id', post.workspace_id)
       .eq('is_active', true);
 
-    const accountsByPlatform = new Map<string, Record<string, unknown>>();
+    // Build account map
+    const accountsByPlatform = new Map<string, PublishRequest['account']>();
     for (const account of accounts || []) {
-      accountsByPlatform.set(account.platform as string, account);
+      accountsByPlatform.set(account.platform as string, {
+        id: account.id as string,
+        platform_account_id: account.platform_account_id as string,
+        account_name: account.account_name as string,
+        access_token: account.access_token as string | undefined,
+        refresh_token: account.refresh_token as string | undefined,
+        metadata: account.metadata as Record<string, unknown> | undefined,
+      });
     }
 
-    // Try Make.com webhook first (if configured)
-    const makeWebhookUrl = process.env.MAKE_PUBLISH_WEBHOOK_URL;
+    // Build post payload for publishers
+    const publishPost: PublishRequest['post'] = {
+      id: post.id as string,
+      caption: post.caption as string,
+      hashtags: (post.hashtags as string[]) || [],
+      content_type: post.content_type as string,
+      media: ((post.post_media || []) as Record<string, unknown>[]).map((m) => ({
+        url: (m.url || m.media_url) as string,
+        type: (m.media_type as 'image' | 'video' | 'gif') || 'image',
+        alt_text: m.alt_text as string | undefined,
+      })),
+    };
 
-    for (const platform of platforms) {
-      const account = accountsByPlatform.get(platform);
-
-      if (makeWebhookUrl) {
-        // Delegate to Make.com for actual publishing
-        try {
-          const makeRes = await fetch(makeWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'publish_post',
-              post_id: post.id,
-              platform,
-              caption: post.caption,
-              hashtags: post.hashtags,
-              content_type: post.content_type,
-              media: (post.post_media || []).map((m: Record<string, unknown>) => ({
-                url: m.media_url,
-                type: m.media_type,
-              })),
-              account_id: account ? account.platform_account_id : null,
-              workspace_id: post.workspace_id,
-            }),
-          });
-
-          if (makeRes.ok) {
-            const makeData = await makeRes.json();
-            results[platform] = {
-              success: true,
-              platform_post_id: makeData.platform_post_id || `make_${Date.now()}`,
-            };
-          } else {
-            results[platform] = { success: false, error: `Make.com returned ${makeRes.status}` };
-          }
-        } catch (err) {
-          results[platform] = {
-            success: false,
-            error: err instanceof Error ? err.message : 'Make.com webhook failed',
-          };
-        }
-      } else if (account) {
-        // Direct API publishing (future implementation)
-        // For now, mark as needing Make.com configuration
-        results[platform] = {
-          success: false,
-          error: 'No publishing method configured. Connect Make.com or set up direct API integration.',
-        };
-      } else {
-        results[platform] = {
-          success: false,
-          error: `No connected account for ${platform}`,
-        };
-      }
-    }
+    // Publish through the abstraction layer
+    const results = await publishToAllPlatforms(publishPost, platforms, accountsByPlatform);
 
     // Determine overall status
-    const allSucceeded = Object.values(results).every(r => r.success);
-    const anySucceeded = Object.values(results).some(r => r.success);
+    const allSucceeded = Object.values(results).every((r) => r.success);
+    const anySucceeded = Object.values(results).some((r) => r.success);
     const finalStatus = allSucceeded ? 'published' : anySucceeded ? 'published' : 'failed';
 
     // Build platform_post_ids from successful publishes
@@ -155,13 +117,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Update post status
+    const updateData: Record<string, unknown> = {
+      status: finalStatus,
+      published_at: finalStatus === 'published' ? new Date().toISOString() : null,
+    };
+    if (Object.keys(platformPostIds).length > 0) {
+      updateData.platform_post_ids = platformPostIds;
+    }
+
     const { error: statusError } = await supabase
       .from('posts')
-      .update({
-        status: finalStatus,
-        published_at: finalStatus === 'published' ? new Date().toISOString() : null,
-        platform_post_ids: Object.keys(platformPostIds).length > 0 ? platformPostIds : null,
-      })
+      .update(updateData)
       .eq('id', post_id);
 
     if (statusError) {
@@ -174,7 +140,7 @@ export async function POST(request: NextRequest) {
       results,
     });
   } catch (err) {
-    console.error('Social publish error:', err);
+    console.error('[publish] Error:', err);
     return NextResponse.json({ error: 'Publishing failed' }, { status: 500 });
   }
 }
