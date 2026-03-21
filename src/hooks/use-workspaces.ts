@@ -80,6 +80,8 @@ export function useUpdateBrandGuidelines() {
       hashtag_sets?: Record<string, string[]>;
       example_captions?: string[];
       color_palette?: Array<{ name: string; hex: string }>;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      content_pillars?: any[];
     }) => {
       const supabase = createClient();
       const { data, error } = await supabase
