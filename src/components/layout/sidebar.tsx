@@ -19,6 +19,8 @@ import {
   BookOpen,
   Menu,
   X,
+  Repeat2,
+  Shield,
 } from 'lucide-react';
 import { signOut } from '@/hooks/use-user';
 import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher';
@@ -30,6 +32,8 @@ const navItems = [
   { href: '/blog', label: 'Blog', icon: BookOpen },
   { href: '/posts', label: 'Posts', icon: FileText },
   { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
+  { href: '/repurpose', label: 'Repurpose', icon: Repeat2 },
+  { href: '/approvals', label: 'Approvals', icon: Shield },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/assets', label: 'Assets', icon: Image },
   { href: '/brand', label: 'Brand', icon: Palette },

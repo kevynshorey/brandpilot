@@ -25,6 +25,7 @@ import {
   BarChart3,
   Pin,
   Zap,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -103,11 +104,59 @@ export default function AnalyticsPage() {
 
   const hasConnectedAccounts = accounts.length > 0;
 
+  const exportCSV = () => {
+    if (!stats) return;
+    const rows = [
+      ['Metric', 'Value'],
+      ['Total Posts', String(stats.total)],
+      ['Published', String(stats.published)],
+      ['Scheduled', String(stats.scheduled)],
+      ['Failed', String(stats.failed)],
+      ['Published This Month', String(stats.publishedThisMonth)],
+      ['Published Last Month', String(stats.publishedLastMonth)],
+      [''],
+      ['Platform', 'Posts'],
+      ...Object.entries(stats.byPlatform).map(([p, c]) => [p, String(c)]),
+      [''],
+      ['Content Type', 'Posts'],
+      ...Object.entries(stats.byContentType).map(([t, c]) => [t, String(c)]),
+    ];
+    if (topPosts.length > 0) {
+      rows.push([''], ['Top Posts'], ['Caption', 'Platform', 'Status', 'Date']);
+      for (const post of topPosts as unknown as Record<string, unknown>[]) {
+        rows.push([
+          String((post.caption as string)?.slice(0, 100) || ''),
+          String((post.target_platforms as string[])?.join(', ') || ''),
+          String(post.status || ''),
+          String(post.published_at || post.scheduled_at || post.created_at || ''),
+        ]);
+      }
+    }
+    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-${activeWorkspace?.slug || 'export'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Analytics</h1>
-        <p className="text-sm text-zinc-500">{activeWorkspace?.name || 'All workspaces'} — content performance</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900">Analytics</h1>
+          <p className="text-sm text-zinc-500">{activeWorkspace?.name || 'All workspaces'} — content performance</p>
+        </div>
+        {stats && (
+          <button
+            onClick={exportCSV}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-zinc-200 text-zinc-700 rounded-xl text-sm font-medium hover:bg-zinc-50 transition-colors"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+        )}
       </div>
 
       {/* Overview Stats (from real post data) */}
