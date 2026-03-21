@@ -202,7 +202,7 @@ export async function sendAdminWaitlistNotification(email: string, source: strin
             </tr>
             <tr>
               <td style="color:#71717a;font-size:13px;padding:4px 0;">Time</td>
-              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toLocaleString('en-US', { timeZone: 'America/Barbados' })}</td>
+              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toISOString()}</td>
             </tr>
           </table>
         </div>
@@ -232,7 +232,7 @@ export async function sendAdminSignupNotification(email: string, name: string) {
             </tr>
             <tr>
               <td style="color:#71717a;font-size:13px;padding:4px 0;">Time</td>
-              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toLocaleString('en-US', { timeZone: 'America/Barbados' })}</td>
+              <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toISOString()}</td>
             </tr>
           </table>
         </div>
@@ -273,7 +273,7 @@ export async function sendAdminFeedbackNotification(
           </tr>
           <tr>
             <td style="color:#71717a;font-size:13px;padding:4px 0;">Time</td>
-            <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toLocaleString('en-US', { timeZone: 'America/Barbados' })}</td>
+            <td style="color:#d4d4d8;font-size:13px;padding:4px 0;text-align:right;">${new Date().toISOString()}</td>
           </tr>
         </table>
       </div>

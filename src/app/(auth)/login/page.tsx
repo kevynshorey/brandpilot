@@ -1,17 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
 
-export default function LoginPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  auth_failed: 'Sign in failed. Please try again.',
+  provider_error: 'Google sign in is temporarily unavailable. Please use email and password.',
+  session_expired: 'Your session has expired. Please sign in again.',
+};
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pick up error from URL params (e.g. redirect from auth/callback)
+  useEffect(() => {
+    const urlError = searchParams.get('error');
+    if (urlError && ERROR_MESSAGES[urlError]) {
+      setError(ERROR_MESSAGES[urlError]);
+    } else if (urlError) {
+      setError('An authentication error occurred. Please try again.');
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,11 +48,15 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+    if (error) {
+      setError('Google sign in is unavailable right now. Please use email and password.');
+    }
   };
 
   return (
@@ -84,7 +105,11 @@ export default function LoginPage() {
           />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
 
         <button
           type="submit"
@@ -101,5 +126,17 @@ export default function LoginPage() {
         <Link href="/signup" className="text-amber-400 hover:text-amber-300">Sign up</Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

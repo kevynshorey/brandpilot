@@ -10,7 +10,12 @@ const PUBLIC_PATHS = [
   '/api/public/',
   '/api/billing/webhook',
   '/api/auth/welcome',
+  '/api/waitlist',
+  '/api/feedback',
 ];
+
+// Routes that should redirect to dashboard if already logged in
+const AUTH_ROUTES = ['/login', '/signup'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -52,6 +57,13 @@ export async function proxy(request: NextRequest) {
   });
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Redirect authenticated users away from login/signup to dashboard
+  if (user && AUTH_ROUTES.some((route) => pathname === route)) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
 
   if (!user) {
     const url = request.nextUrl.clone();

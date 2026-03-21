@@ -53,28 +53,28 @@ const INDUSTRY_STRATEGIES: Record<string, {
   platformTips: string[];
   contentTypes: string[];
 }> = {
-  // Are You Vintage — vintage lifestyle/fashion magazine blog
+  // Vintage lifestyle / fashion / retro brands
   vintage: {
     pillars: ['Wheels (classic cars & motorcycles)', 'Threads (vintage fashion & style)', 'Spaces (retro interiors & architecture)', 'People (collectors, artisans, icons)', 'Culture (music, film, nostalgia)'],
     viralMechanics: ['before/after restorations', 'era comparisons (then vs now)', 'hidden gem spotlights', 'nostalgia triggers', '"guess the year" interactive posts', 'collector stories', 'controversial hot takes on modern vs vintage'],
     platformTips: ['Instagram Reels: restoration timelapses, thrift hauls, vintage lookbooks', 'Pinterest: SEO-rich boards for each pillar — vintage fashion, classic cars, retro decor', 'X/Twitter: hot takes on vintage culture, threads on iconic eras', 'TikTok: quick transformation reveals, "things that were better in the 80s"'],
     contentTypes: ['carousel', 'reel', 'story', 'blog-crosspost', 'pinterest-pin', 'thread'],
   },
-  // Island Chem Solutions — industrial cleaning products in Barbados (B2B)
+  // Industrial cleaning / chemical products (B2B)
   'industrial-cleaning': {
-    pillars: ['Product Education (how-tos, application guides)', 'Industry Authority (compliance, safety standards)', 'Case Studies (before/after client results)', 'Behind the Scenes (manufacturing, team, quality control)', 'Local Expertise (Caribbean-specific challenges — humidity, salt air, tropical conditions)'],
+    pillars: ['Product Education (how-tos, application guides)', 'Industry Authority (compliance, safety standards)', 'Case Studies (before/after client results)', 'Behind the Scenes (manufacturing, team, quality control)', 'Local Expertise (region-specific challenges and conditions)'],
     viralMechanics: ['satisfying cleaning transformations', 'before/after reveals', 'myth-busting (common cleaning mistakes)', 'safety tip series', 'client testimonial spotlights', '"did you know" industry facts'],
     platformTips: ['LinkedIn: thought leadership articles, B2B case studies, industry compliance updates', 'Instagram: satisfying cleaning videos, product demos, team spotlights', 'Facebook: community engagement, local business partnerships, event coverage', 'YouTube Shorts: product demonstration clips, cleaning hacks'],
     contentTypes: ['carousel', 'video', 'article', 'infographic', 'testimonial', 'demo-reel'],
   },
-  // Prime Barbados — luxury real estate & concierge
+  // Luxury real estate & concierge services
   'luxury-real-estate': {
-    pillars: ['Property Showcases (luxury listings, virtual tours)', 'Island Lifestyle (Barbados living, relocation guides)', 'Investment Insights (market trends, ROI analysis)', 'Concierge & Experiences (dining, events, excursions)', 'Client Success Stories (testimonials, settlement journeys)'],
-    viralMechanics: ['property reveal tours with dramatic hooks', 'lifestyle aspiration content', '"a day in Barbados" series', 'market hot takes', 'price comparison content (what $X gets you)', 'drone footage reveals', 'celebrity/notable home features'],
-    platformTips: ['Instagram Reels: cinematic property tours, sunset lifestyle shots, drone reveals', 'LinkedIn: market analysis, investment thought leadership, relocation guides', 'Pinterest: aspirational boards — Barbados luxury homes, island interiors, tropical architecture', 'YouTube: full property walkthroughs, neighborhood guides, client interviews'],
+    pillars: ['Property Showcases (luxury listings, virtual tours)', 'Lifestyle & Relocation (local living, relocation guides)', 'Investment Insights (market trends, ROI analysis)', 'Concierge & Experiences (dining, events, excursions)', 'Client Success Stories (testimonials, settlement journeys)'],
+    viralMechanics: ['property reveal tours with dramatic hooks', 'lifestyle aspiration content', '"a day in the life" location series', 'market hot takes', 'price comparison content (what $X gets you)', 'drone footage reveals', 'celebrity/notable home features'],
+    platformTips: ['Instagram Reels: cinematic property tours, sunset lifestyle shots, drone reveals', 'LinkedIn: market analysis, investment thought leadership, relocation guides', 'Pinterest: aspirational boards — luxury homes, interiors, architecture', 'YouTube: full property walkthroughs, neighborhood guides, client interviews'],
     contentTypes: ['reel', 'carousel', 'story', 'video-tour', 'pinterest-pin', 'article', 'infographic'],
   },
-  // LaunchPath — startup accelerator/venture platform
+  // Startup accelerator / venture platform
   'startup-accelerator': {
     pillars: ['Founder Spotlights (portfolio company stories)', 'Startup Education (fundraising, growth, product-market fit)', 'Industry Trends (emerging sectors, market analysis)', 'Behind the Program (demo days, mentorship, cohort updates)', 'Thought Leadership (venture insights, ecosystem building)'],
     viralMechanics: ['founder journey threads', 'startup failure lessons (controversial/honest)', 'fundraising hot takes', '"what I wish I knew" series', 'metric breakdowns', 'pitch deck teardowns', 'contrarian takes on startup advice'],
@@ -86,13 +86,13 @@ const INDUSTRY_STRATEGIES: Record<string, {
 function detectIndustryStrategy(brand: BrandInput): typeof INDUSTRY_STRATEGIES[string] | null {
   const key = `${brand.name} ${brand.industry}`.toLowerCase();
 
-  if (key.includes('vintage') || key.includes('are you vintage') || key.includes('retro') || key.includes('fashion magazine'))
+  if (key.includes('vintage') || key.includes('retro') || key.includes('thrift') || key.includes('nostalgia'))
     return INDUSTRY_STRATEGIES['vintage'];
-  if (key.includes('chem') || key.includes('cleaning') || key.includes('industrial') || key.includes('island chem'))
+  if (key.includes('cleaning') || key.includes('chemical') || key.includes('industrial') || key.includes('janitorial') || key.includes('sanitation'))
     return INDUSTRY_STRATEGIES['industrial-cleaning'];
-  if (key.includes('prime') || key.includes('real estate') || key.includes('luxury') || key.includes('concierge'))
+  if (key.includes('real estate') || key.includes('luxury') || key.includes('concierge') || key.includes('property') || key.includes('realty'))
     return INDUSTRY_STRATEGIES['luxury-real-estate'];
-  if (key.includes('launch') || key.includes('accelerator') || key.includes('venture') || key.includes('startup'))
+  if (key.includes('accelerator') || key.includes('venture') || key.includes('startup') || key.includes('incubator') || key.includes('vc '))
     return INDUSTRY_STRATEGIES['startup-accelerator'];
 
   return null;
