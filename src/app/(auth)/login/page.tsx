@@ -20,6 +20,9 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Where to send the user after login (set by proxy when redirecting to /login)
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
+
   // Pick up error from URL params (e.g. redirect from auth/callback)
   useEffect(() => {
     const urlError = searchParams.get('error');
@@ -44,7 +47,7 @@ function LoginForm() {
       return;
     }
 
-    router.push('/dashboard');
+    router.push(redirectTo);
   };
 
   const handleGoogleLogin = async () => {
@@ -52,7 +55,7 @@ function LoginForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
     });
     if (error) {
       setError('Google sign in is unavailable right now. Please use email and password.');

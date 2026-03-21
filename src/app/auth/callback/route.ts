@@ -14,6 +14,8 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    // Log the actual error for debugging (server-side only)
+    console.error('[auth/callback] Session exchange failed:', error.message);
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth_failed`);

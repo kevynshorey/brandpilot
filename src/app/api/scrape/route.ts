@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAllowedUrl, scrapeUrl } from '@/lib/scraper';
 import { createRateLimiter } from '@/lib/rate-limit';
+import { getAuthUser } from '@/lib/auth';
 
 const checkRateLimit = createRateLimiter(5, 60_000, 'scrape');
 
@@ -29,6 +30,11 @@ export async function POST(request: NextRequest) {
       { error: 'Rate limit exceeded. Try again in 60 seconds.' },
       { status: 429, headers: { 'Retry-After': '60' } },
     );
+  }
+
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   let body: Record<string, unknown>;
