@@ -364,7 +364,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    console.log('Marketing API request:', { contentType: body.contentType, platform: body.platform, goal: body.goal, style: body.style, brandName: body.brand?.name });
+    // Request metadata logged at debug level only
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Marketing API request:', { contentType: body.contentType, platform: body.platform });
+    }
 
     // --- Validate enums ---------------------------------------------------
     const contentType = body.contentType as ContentType;
