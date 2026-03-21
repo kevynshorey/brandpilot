@@ -23,6 +23,8 @@ import {
   Shield,
   Hash,
   LayoutTemplate,
+  Clock,
+  Target,
 } from 'lucide-react';
 import { signOut } from '@/hooks/use-user';
 import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher';
@@ -37,6 +39,8 @@ const navItems = [
   { href: '/repurpose', label: 'Repurpose', icon: Repeat2 },
   { href: '/hashtags', label: 'Hashtags', icon: Hash },
   { href: '/templates', label: 'Templates', icon: LayoutTemplate },
+  { href: '/score', label: 'Content Score', icon: Target },
+  { href: '/best-time', label: 'Best Time', icon: Clock },
   { href: '/approvals', label: 'Approvals', icon: Shield },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/assets', label: 'Assets', icon: Image },
